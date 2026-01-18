@@ -100,17 +100,9 @@ function DashboardPage() {
       title: "Manage Bookings",
       description: "View and manage booking for packages",
       icon: <ClipboardCheck className="w-6 h-6 text-white" />,
-      onClick: () => setIsBookingsOpen(true),
+      onClick: () => router.push("/select-trip"),
     },
   ];
-
-  const formatTripDate = (start: string, end: string) => {
-    try {
-      return `${format(new Date(start), "MMM dd")} - ${format(new Date(end), "dd")}`;
-    } catch {
-      return "Date TBD";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
@@ -206,140 +198,7 @@ function DashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Manage Bookings Drawer */}
-      <Drawer open={isBookingsOpen} onOpenChange={setIsBookingsOpen}>
-        <DrawerContent className="bg-white rounded-t-[40px] px-3 pb-8 outline-none max-h-[85vh]">
-          <DrawerHeader className="p-0 my-3">
-            <DrawerTitle className="text-base text-center text-black">
-              Select Camp/Package to Add customers
-            </DrawerTitle>
-          </DrawerHeader>
-
-          <Tabs defaultValue="camps" className="w-full overflow-hidden flex flex-col">
-            <TabsList className="grid w-full grid-cols-2 bg-[#E2F1E8] rounded-xl p-1 h-9 mb-3 shrink-0">
-              <TabsTrigger
-                value="camps"
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-medium"
-              >
-                Camps
-              </TabsTrigger>
-              <TabsTrigger
-                value="packages"
-                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-medium"
-              >
-                Packages
-              </TabsTrigger>
-            </TabsList>
-
-            <div className="flex-1 overflow-y-auto min-h-0 pb-4">
-              <TabsContent value="camps" className="space-y-4 mt-0">
-                {tripsLoading ? (
-                  <div className="flex flex-col items-center justify-center py-10 gap-2">
-                    <Loader2 className="w-8 h-8 text-[#219653] animate-spin" />
-                    <p className="text-sm text-gray-500">Loading trips...</p>
-                  </div>
-                ) : camps.length > 0 ? (
-                  camps.map((camp: any) => (
-                    <Card
-                      key={camp.id}
-                      onClick={() => router.push(`/manage-bookings/${camp.id}`)}
-                      className="p-3 rounded-2xl gap-2 border-2 border-[#219653]/20 space-y-1 hover:border-[#219653] bg-white transition-all cursor-pointer group"
-                    >
-                      <div className="flex justify-between items-start mb-0.5">
-                        <h3 className="text-base font-bold text-black group-hover:text-[#219653] transition-colors line-clamp-1">{camp.title}</h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-[#219653] hover:bg-[#E2F1E8] rounded-full shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/edit-trip/${camp.id}`);
-                          }}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-xs text-gray-400 font-medium truncate">{camp.destination}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4 text-[#219653]" />
-                          <span className="text-xs font-bold text-[#219653]">
-                            {formatTripDate(camp.startDate, camp.endDate)}
-                          </span>
-                        </div>
-                        <span className="text-xs font-bold text-[#219653]">₹{parseFloat(camp.price).toLocaleString()}</span>
-                      </div>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-10 text-gray-400">
-                    No camps available
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="packages" className="space-y-4 mt-0">
-                {tripsLoading ? (
-                  <div className="flex flex-col items-center justify-center py-10 gap-2">
-                    <Loader2 className="w-8 h-8 text-[#219653] animate-spin" />
-                    <p className="text-sm text-gray-500">Loading trips...</p>
-                  </div>
-                ) : packages.length > 0 ? (
-                  packages.map((pkg: any) => (
-                    <Card
-                      key={pkg.id}
-                      onClick={() => router.push(`/manage-bookings/${pkg.id}`)}
-                      className="p-3 rounded-2xl gap-2 border-2 border-[#219653]/20 space-y-1 hover:border-[#219653] bg-white transition-all cursor-pointer group"
-                    >
-                      <div className="flex justify-between items-start mb-0.5">
-                        <h3 className="text-base font-bold text-black group-hover:text-[#219653] transition-colors line-clamp-1">{pkg.title}</h3>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-[#219653] hover:bg-[#E2F1E8] rounded-full shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/edit-trip/${pkg.id}`);
-                          }}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-xs text-gray-400 font-medium truncate">{pkg.destination}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4 text-[#219653]" />
-                          <span className="text-xs font-bold text-[#219653]">
-                            {formatTripDate(pkg.startDate, pkg.endDate)}
-                          </span>
-                        </div>
-                        <span className="text-xs font-bold text-[#219653]">₹{parseFloat(pkg.price).toLocaleString()}</span>
-                      </div>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-10 text-gray-400">
-                    No packages available
-                  </div>
-                )}
-              </TabsContent>
-            </div>
-          </Tabs>
-        </DrawerContent>
-      </Drawer>
-
-    </div >
+    </div>
   );
 }
 

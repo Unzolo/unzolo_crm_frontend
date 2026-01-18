@@ -10,7 +10,8 @@ import {
     Calendar as CalendarIcon,
     Image as ImageIcon,
     X,
-    Loader2
+    Loader2,
+    Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -265,16 +266,29 @@ function CreateBookingPage() {
                 <form id="booking-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-32">
                     {fields.map((field, index) => (
                         <Card key={field.id} className="p-3 border-none bg-[#219653]/5 rounded-[24px] space-y-0 relative">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className={cn(
-                                    "w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold",
-                                    index === 0 ? "bg-[#219653]" : "bg-gray-400"
-                                )}>
-                                    {index + 1}
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className={cn(
+                                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold",
+                                        index === 0 ? "bg-[#219653]" : "bg-gray-400"
+                                    )}>
+                                        {index + 1}
+                                    </div>
+                                    <h3 className={cn("text-sm font-bold", index === 0 ? "text-[#219653]" : "text-gray-500")}>
+                                        {index === 0 ? "Primary Contact" : `Participant ${index + 1}`}
+                                    </h3>
                                 </div>
-                                <h3 className={cn("text-sm font-bold", index === 0 ? "text-[#219653]" : "text-gray-500")}>
-                                    {index === 0 ? "Primary Contact" : `Participant ${index + 1}`}
-                                </h3>
+                                {index > 0 && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
+                                        onClick={() => remove(index)}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-12 gap-x-4 gap-y-4 pt-0">
@@ -315,6 +329,7 @@ function CreateBookingPage() {
                                         <Input
                                             {...register(`members.${index}.contactNumber`)}
                                             placeholder="Phone number"
+                                            type="number"
                                             className={cn(
                                                 "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
                                                 errors.members?.[index]?.contactNumber && "border-red-500"

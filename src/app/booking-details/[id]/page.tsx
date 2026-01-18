@@ -317,9 +317,10 @@ function BookingDetailsPage() {
                     variant="outline"
                     onClick={() => {
                         const bookingData = {
+                            _id: booking._id || booking.id,
                             trip: booking.Trip,
                             customers: booking.Customers,
-                            amount: booking.amount,
+                            amount: booking.totalCost,
                             paidAmount: booking.paidAmount
                         };
                         const encoded = encodeURIComponent(JSON.stringify(bookingData));

@@ -64,8 +64,15 @@ function OtpForm() {
                 toast.warning("You are currently offline. Verification will proceed once you're back online.");
                 return;
             }
+
+            // Store token and user data
+            if (response.data) {
+                localStorage.setItem("token", response.data.token);
+                localStorage.setItem("user", JSON.stringify(response.data.partner || response.data.user));
+            }
+
             toast.success("Verification successful!");
-            router.push("/login"); // Or dashboard
+            router.push("/");
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Invalid OTP. Please try again.");

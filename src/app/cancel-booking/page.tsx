@@ -96,7 +96,7 @@ function CancelBookingPage() {
         if (selectedParticipants.length === participants.length) {
             setSelectedParticipants([]);
         } else {
-            setSelectedParticipants(participants.map((p: any) => p.id));
+            setSelectedParticipants(participants.map((p: any) => p.id || p._id));
         }
     };
 
@@ -108,7 +108,7 @@ function CancelBookingPage() {
 
             // Build body according to requirements
             selectedParticipants.forEach(id => {
-                formData.append("memberIds[]", id);
+                formData.append("memberIds", id);
             });
 
             if (refundAmount) {
@@ -206,31 +206,35 @@ function CancelBookingPage() {
                     </div>
 
                     <div className="space-y-3">
-                        {participants.map((p: any) => (
-                            <Card
-                                key={p.id}
-                                onClick={() => toggleParticipant(p.id)}
-                                className={`p-4 border-2 transition-all cursor-pointer rounded-2xl flex flex-row justify-between ${selectedParticipants.includes(p.id) ? "border-[#219653] bg-white" : "border-transparent bg-gray-50/50"}`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${selectedParticipants.includes(p.id) ? "bg-[#E2F1E8] border-[#219653]" : "bg-white border-gray-200"}`}>
-                                        {selectedParticipants.includes(p.id) && <Check className="w-3 h-3 text-[#219653]" />}
+                        {participants.map((p: any) => {
+                            const pId = p.id || p._id;
+                            const isSelected = selectedParticipants.includes(pId);
+                            return (
+                                <Card
+                                    key={pId}
+                                    onClick={() => toggleParticipant(pId)}
+                                    className={`p-3 pt-5 border-2 transition-all cursor-pointer rounded-2xl flex flex-row justify-between ${isSelected ? "border-[#219653] bg-white ring-4 ring-[#219653]/5" : "border-transparent bg-gray-50/50"}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${isSelected ? "bg-[#219653] border-[#219653]" : "bg-white border-gray-200"}`}>
+                                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-50">
+                                            <Users className="w-5 h-5 text-[#219653]" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-black">{p.name}</p>
+                                            <p className="text-[11px] text-gray-400 font-medium">
+                                                {p.age} yrs • {p.gender === 'male' ? "♂" : p.gender === 'female' ? "♀" : ""} {p.gender}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-gray-50">
-                                        <Users className="w-5 h-5 text-[#219653]" />
+                                    <div className="text-right">
+                                        <Badge variant="secondary" className="bg-gray-100 text-gray-400 text-[9px] font-bold uppercase py-0 px-2 mb-1 border-none shadow-none">{p.isPrimary ? "Primary" : "Member"}</Badge>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-black">{p.name}</p>
-                                        <p className="text-[11px] text-gray-400 font-medium">
-                                            {p.age} yrs • {p.gender === 'male' ? "♂" : p.gender === 'female' ? "♀" : ""} {p.gender}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <Badge variant="secondary" className="bg-gray-100 text-gray-400 text-[9px] font-bold uppercase py-0 px-2 mb-1 border-none shadow-none">{p.isPrimary ? "Primary" : "Member"}</Badge>
-                                </div>
-                            </Card>
-                        ))}
+                                </Card>
+                            );
+                        })}
                     </div>
                 </div>
 

@@ -75,10 +75,16 @@ function CreateTripPage() {
         onSuccess: (response) => {
             if (response.queued) {
                 toast.info("Trip creation queued! It will sync when you're online.");
+                router.push("/");
             } else {
                 toast.success("Trip created successfully!");
+                const tripId = response.data?._id || response.data?.id;
+                if (tripId) {
+                    router.push(`/manage-bookings/${tripId}`);
+                } else {
+                    router.push("/");
+                }
             }
-            router.push("/"); // Redirect to dashboard
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Failed to create trip. Please try again.");
