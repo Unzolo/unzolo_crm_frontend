@@ -130,6 +130,28 @@ export const apiWithOffline = {
             } as AxiosResponse<T>;
           }
         }
+
+        if (url.includes('/dashboard/stats')) {
+          const stats = await syncService.getStats();
+          return {
+            data: { data: stats } as T,
+            status: 200,
+            statusText: 'OK (from cache)',
+            headers: {},
+            config: config || {},
+          } as AxiosResponse<T>;
+        }
+
+        if (url.includes('/auth/profile')) {
+          const profile = await syncService.getProfile();
+          return {
+            data: { data: profile } as T,
+            status: 200,
+            statusText: 'OK (from cache)',
+            headers: {},
+            config: config || {},
+          } as AxiosResponse<T>;
+        }
       }
       
       throw error;
@@ -156,19 +178,32 @@ export const apiWithOffline = {
       if (!navigator.onLine || error.message === 'Network Error') {
         console.log('📴 Offline - queueing POST request');
         
-        // Determine entity type
-        let entity: 'booking' | 'trip' | 'payment' = 'booking';
-        if (url.includes('/trips')) entity = 'trip';
-        if (url.includes('/payments')) entity = 'payment';
+        // If it's a specific entity creation, use SyncQueue for better local integration
+        // Otherwise use general PendingRequest
+        const isCreation = (url === '/bookings' || url === '/trips' || url.includes('/payments')) && !url.includes('/cancel');
         
-        await offlineQueue.addToSyncQueue('create', entity, data);
+        if (isCreation) {
+          let entity: 'booking' | 'trip' | 'payment' = 'booking';
+          if (url.includes('/trips')) entity = 'trip';
+          if (url.includes('/payments')) entity = 'payment';
+          
+          await offlineQueue.addToSyncQueue('create', entity, data);
+        } else {
+          // Serialized FormData if necessary (though modern browsers handle File/Blob in IndexedDB)
+          await offlineQueue.addPendingRequest(
+            url,
+            'POST',
+            data,
+            config?.headers as Record<string, string>
+          );
+        }
         
         return {
           data: { 
             success: true, 
             queued: true,
             message: 'Request queued for sync when online',
-            data: { ...data, _id: `temp-${Date.now()}` }
+            data: isCreation ? { ...data, _id: `temp-${Date.now()}` } : data
           } as T,
           status: 202,
           statusText: 'Queued',
@@ -272,7 +307,42 @@ export const apiWithOffline = {
    * PATCH request with offline queue
    */
   async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.put<T>(url, data, config);
+    try {
+      const response = await api.patch<T>(url, data, config);
+      
+      // Sync to local storage after successful patch
+      if (url.includes('/bookings') && response.data) {
+        await syncService.syncBookings();
+      } else if (url.includes('/trips') && response.data) {
+        await syncService.syncTrips();
+      }
+      
+      return response;
+    } catch (error: any) {
+      // If offline, queue the request
+      if (!navigator.onLine || error.message === 'Network Error') {
+        console.log('📴 Offline - queueing PATCH request');
+        
+        let entity: 'booking' | 'trip' | 'payment' = 'booking';
+        if (url.includes('/trips')) entity = 'trip';
+        
+        await offlineQueue.addToSyncQueue('update', entity, data);
+        
+        return {
+          data: { 
+            success: true, 
+            queued: true,
+            message: 'Request queued for sync when online' 
+          } as T,
+          status: 202,
+          statusText: 'Queued',
+          headers: {},
+          config: config || {},
+        } as AxiosResponse<T>;
+      }
+      
+      throw error;
+    }
   },
 };
 

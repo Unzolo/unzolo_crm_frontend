@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   title: "Unzolo CRM",
   description: "Premium CRM for modern businesses",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.png?v=2",
+    apple: [
+      { url: "/icon-192x192.png?v=2", sizes: "192x192" },
+      { url: "/icon-512x512.png?v=2", sizes: "512x512" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -34,6 +41,7 @@ import QueryProvider from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineProvider } from "@/components/offline-provider";
 import { OfflineIndicator } from "@/components/offline-indicator";
+import { PwaInstallBanner } from "@/components/pwa-install-prompt";
 
 export default function RootLayout({
   children,
@@ -45,13 +53,14 @@ export default function RootLayout({
       <body
         className={`${openSans.variable} font-sans antialiased`}
       >
-        <OfflineProvider>
-          <QueryProvider>
+        <QueryProvider>
+          <OfflineProvider>
             {children}
             <Toaster position="top-center" richColors />
             <OfflineIndicator />
-          </QueryProvider>
-        </OfflineProvider>
+            <PwaInstallBanner />
+          </OfflineProvider>
+        </QueryProvider>
       </body>
     </html>
   );

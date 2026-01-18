@@ -10,12 +10,19 @@ import { Wifi, WifiOff, RefreshCw, Cloud, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+import { useState, useEffect } from 'react';
+
 export function OfflineIndicator() {
     const isOnline = useOnlineStatus();
     const { pendingCount, isSyncing, syncNow } = usePendingSync();
+    const [mounted, setMounted] = useState(false);
 
-    // Don't show if online and no pending items
-    if (isOnline && pendingCount === 0) {
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Don't show if online and no pending items or not mounted
+    if (!mounted || (isOnline && pendingCount === 0)) {
         return null;
     }
 
@@ -77,6 +84,15 @@ export function OfflineIndicator() {
  */
 export function OnlineStatusBadge() {
     const isOnline = useOnlineStatus();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return <div className="h-6 w-20" />; // Placeholder with same height
+    }
 
     return (
         <div

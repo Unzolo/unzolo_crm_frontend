@@ -35,7 +35,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useState } from "react";
 import { withAuth } from "@/components/auth/with-auth";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ function ManageBookingPage() {
     const { data: bookingsResponse, isLoading } = useQuery({
         queryKey: ["bookings", tripId],
         queryFn: async () => {
-            const response = await api.get(`/bookings?tripId=${tripId}`);
+            const response = await apiWithOffline.get(`/bookings?tripId=${tripId}`);
             return response.data;
         },
         enabled: !!tripId,
@@ -65,7 +65,7 @@ function ManageBookingPage() {
     const { data: tripResponse } = useQuery({
         queryKey: ["trip", tripId],
         queryFn: async () => {
-            const response = await api.get(`/trips/${tripId}`);
+            const response = await apiWithOffline.get(`/trips/${tripId}`);
             return response.data;
         },
         enabled: !!tripId,

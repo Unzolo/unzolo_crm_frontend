@@ -43,7 +43,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { withAuth } from "@/components/auth/with-auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
 function BookingDetailsPage() {
@@ -61,7 +61,7 @@ function BookingDetailsPage() {
     const { data: bookingResponse, isLoading } = useQuery({
         queryKey: ["booking", id],
         queryFn: async () => {
-            const response = await api.get(`/bookings/${id}`);
+            const response = await apiWithOffline.get(`/bookings/${id}`);
             return response.data;
         },
         enabled: !!id
@@ -120,13 +120,17 @@ function BookingDetailsPage() {
                 formData.append("screenshot", selectedFile);
             }
 
-            const response = await api.post(`/bookings/${id}/payments`, formData, {
+            const response = await apiWithOffline.post(`/bookings/${id}/payments`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             return response.data;
         },
-        onSuccess: () => {
-            toast.success("Payment added successfully");
+        onSuccess: (response) => {
+            if (response.queued) {
+                toast.info("Payment queued! It will sync when you're online.");
+            } else {
+                toast.success("Payment added successfully");
+            }
             setIsUpdatePaymentOpen(false);
             setCustomAmount("");
             setSelectedFile(null);

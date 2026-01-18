@@ -178,7 +178,7 @@ class OfflineQueueManager {
         if (item.action === 'create') {
           await api.post('/bookings', item.data);
         } else if (item.action === 'update') {
-          await api.put(`/bookings/${item.data._id}`, item.data);
+          await api.patch(`/bookings/${item.data._id}`, item.data);
         } else if (item.action === 'delete') {
           await api.delete(`/bookings/${item.data._id}`);
         }
@@ -188,7 +188,7 @@ class OfflineQueueManager {
         if (item.action === 'create') {
           await api.post('/trips', item.data);
         } else if (item.action === 'update') {
-          await api.put(`/trips/${item.data._id}`, item.data);
+          await api.patch(`/trips/${item.data._id}`, item.data);
         } else if (item.action === 'delete') {
           await api.delete(`/trips/${item.data._id}`);
         }

@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/popover";
 import { withAuth } from "@/components/auth/with-auth";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -39,10 +39,25 @@ function DashboardPage() {
   const router = useRouter();
   const [isBookingsOpen, setIsBookingsOpen] = useState(false);
 
+  const { data: statsResponse } = useQuery({
+    queryKey: ["stats"],
+    queryFn: async () => {
+      const response = await apiWithOffline.get("/dashboard/stats");
+      return response.data;
+    },
+  });
+
+  const dashboardStats = statsResponse?.data || {
+    totalTrips: 0,
+    totalBookings: 0,
+    totalEarnings: 0,
+    monthlyEarnings: 0,
+  };
+
   const { data: tripsResponse, isLoading: tripsLoading } = useQuery({
     queryKey: ["trips"],
     queryFn: async () => {
-      const response = await api.get("/trips");
+      const response = await apiWithOffline.get("/trips");
       return response.data;
     },
   });
@@ -54,22 +69,22 @@ function DashboardPage() {
   const stats = [
     {
       label: "Total Trips",
-      value: allTrips.length.toString(),
+      value: dashboardStats.totalTrips.toString(),
       icon: <Package className="w-6 h-6 text-[#219653]" />,
     },
     {
       label: "Total Booking",
-      value: "0",
+      value: dashboardStats.totalBookings.toString(),
       icon: <ClipboardCheck className="w-6 h-6 text-[#219653]" />,
     },
     {
       label: "Total Earnings",
-      value: "₹0",
+      value: `₹${dashboardStats.totalEarnings.toLocaleString()}`,
       icon: <IndianRupee className="w-6 h-6 text-[#219653]" />,
     },
     {
       label: "Mo Earnings",
-      value: "₹0",
+      value: `₹${dashboardStats.monthlyEarnings.toLocaleString()}`,
       icon: <IndianRupee className="w-6 h-6 text-[#219653]" />,
     },
   ];

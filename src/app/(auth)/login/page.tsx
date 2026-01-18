@@ -10,10 +10,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import { useEffect } from "react";
+import { useOnlineStatus } from "@/lib/hooks/use-offline";
 
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+    const isOnline = useOnlineStatus();
     const { email: storedEmail, setEmail } = useAuthStore();
 
     const {
@@ -50,10 +52,15 @@ export default function LoginPage() {
 
     const loginMutation = useMutation({
         mutationFn: async (values: LoginValues) => {
-            const response = await api.post("/auth/login", values);
+            const response = await apiWithOffline.post("/auth/login", values);
             return response.data;
         },
         onSuccess: (response) => {
+            if (response.queued) {
+                toast.warning("You are currently offline. Login will proceed once you're back online.");
+                return;
+            }
+
             const token = response?.data?.token;
             const partner = response?.data?.partner;
 
@@ -93,6 +100,7 @@ export default function LoginPage() {
                         {...register("email", { onChange: handleEmailChange })}
                         type="email"
                         placeholder="Enter email id"
+                        suppressHydrationWarning
                         className={cn(
                             "w-full mt-2 px-4 py-6 rounded-lg border border-gray-200 focus-visible:ring-2 focus-visible:ring-[#219653] focus-visible:border-transparent transition-all",
                             errors.email && "border-red-500 focus-visible:ring-red-500"
@@ -111,6 +119,7 @@ export default function LoginPage() {
                             {...register("password")}
                             type={showPassword ? "text" : "password"}
                             placeholder="Enter password"
+                            suppressHydrationWarning
                             className={cn(
                                 "w-full px-4 py-6 rounded-lg border border-gray-200 focus-visible:ring-2 focus-visible:ring-[#219653] focus-visible:border-transparent transition-all",
                                 errors.password && "border-red-500 focus-visible:ring-red-500"
@@ -119,6 +128,7 @@ export default function LoginPage() {
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
+                            suppressHydrationWarning
                             className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 focus:outline-none"
                         >
                             {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -142,6 +152,7 @@ export default function LoginPage() {
                     <Button
                         type="submit"
                         disabled={loginMutation.isPending}
+                        suppressHydrationWarning
                         className="w-full bg-[#219653] py-6 rounded-full text-white font-semibold text-lg hover:bg-[#1A7B44] transition-colors flex items-center justify-center gap-2"
                     >
                         {loginMutation.isPending ? (

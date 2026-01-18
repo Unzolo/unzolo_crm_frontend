@@ -10,11 +10,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
 import { useAuthStore, SignupData } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
+import { useOnlineStatus } from "@/lib/hooks/use-offline";
 
 const signupSchema = z.object({
     name: z.string().min(2, "Company Name must be at least 2 characters"),
@@ -28,6 +29,7 @@ type SignupValues = z.infer<typeof signupSchema>;
 export default function SignupPage() {
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+    const isOnline = useOnlineStatus();
     const { setEmail, signupData, setSignupData } = useAuthStore();
 
     const {
@@ -41,11 +43,15 @@ export default function SignupPage() {
 
     const signupMutation = useMutation({
         mutationFn: async (values: SignupValues) => {
-            await api.post("/auth/register", values);
+            const response = await apiWithOffline.post("/auth/register", values);
             await new Promise((resolve) => setTimeout(resolve, 1500));
-            return { success: true };
+            return response.data;
         },
-        onSuccess: (_, variables) => {
+        onSuccess: (response, variables) => {
+            if (response.queued) {
+                toast.warning("You are currently offline. Signup will proceed once you're back online.");
+                return;
+            }
             setEmail(variables.email);
             toast.success("OTP sent");
             router.push(`/otp?email=${encodeURIComponent(variables.email)}`);
@@ -79,6 +85,7 @@ export default function SignupPage() {
                             {...register("name", { onChange: (e) => handleFieldChange('name', e.target.value) })}
                             type="text"
                             placeholder="Enter company name"
+                            suppressHydrationWarning
                             className={cn(
                                 "w-full px-4 py-6 mt-1 rounded-lg border border-gray-200 focus-visible:ring-2 focus-visible:ring-[#219653] focus-visible:border-transparent transition-all",
                                 errors.name && "border-red-500 focus-visible:ring-red-500"
@@ -96,6 +103,7 @@ export default function SignupPage() {
                             {...register("email", { onChange: (e) => handleFieldChange('email', e.target.value) })}
                             type="email"
                             placeholder="Enter email id"
+                            suppressHydrationWarning
                             className={cn(
                                 "w-full mt-1 px-4 py-6 rounded-lg border border-gray-200 focus-visible:ring-2 focus-visible:ring-[#219653] focus-visible:border-transparent transition-all",
                                 errors.email && "border-red-500 focus-visible:ring-red-500"
@@ -115,6 +123,7 @@ export default function SignupPage() {
                             {...register("phone", { onChange: (e) => handleFieldChange('phone', e.target.value) })}
                             type="tel"
                             placeholder="10 digit phone number"
+                            suppressHydrationWarning
                             className={cn(
                                 "w-full mt-1 px-4 py-6 rounded-lg border border-gray-200 focus-visible:ring-2 focus-visible:ring-[#219653] focus-visible:border-transparent transition-all",
                                 errors.phone && "border-red-500 focus-visible:ring-red-500"
@@ -133,6 +142,7 @@ export default function SignupPage() {
                                 {...register("password", { onChange: (e) => handleFieldChange('password', e.target.value) })}
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Create a new password"
+                                suppressHydrationWarning
                                 className={cn(
                                     "w-full mt-1 px-4 py-6 rounded-lg border border-gray-200 focus-visible:ring-2 focus-visible:ring-[#219653] focus-visible:border-transparent transition-all",
                                     errors.password && "border-red-500 focus-visible:ring-red-500"
@@ -141,6 +151,7 @@ export default function SignupPage() {
                             <button
                                 onClick={() => setShowPassword(!showPassword)}
                                 type="button"
+                                suppressHydrationWarning
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 focus:outline-none"
                             >
                                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
@@ -164,6 +175,7 @@ export default function SignupPage() {
                     <Button
                         type="submit"
                         disabled={signupMutation.isPending}
+                        suppressHydrationWarning
                         className="w-full bg-[#219653] py-6 rounded-full text-white font-semibold text-lg hover:bg-[#1A7B44] transition-colors flex items-center justify-center gap-2"
                     >
                         {signupMutation.isPending ? (

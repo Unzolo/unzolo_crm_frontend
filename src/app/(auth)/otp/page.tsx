@@ -6,7 +6,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
 function OtpForm() {
@@ -55,11 +55,15 @@ function OtpForm() {
 
     const verifyMutation = useMutation({
         mutationFn: async (otpString: string) => {
-            await api.post("/auth/verify-otp", { email, otp: otpString });
+            const response = await apiWithOffline.post("/auth/verify-otp", { email, otp: otpString });
             await new Promise((resolve) => setTimeout(resolve, 1000));
-            return { success: true };
+            return response.data;
         },
-        onSuccess: () => {
+        onSuccess: (response) => {
+            if (response.queued) {
+                toast.warning("You are currently offline. Verification will proceed once you're back online.");
+                return;
+            }
             toast.success("Verification successful!");
             router.push("/login"); // Or dashboard
         },
@@ -70,10 +74,14 @@ function OtpForm() {
 
     const resendMutation = useMutation({
         mutationFn: async () => {
-            await api.post("/auth/resend-otp", { email });
-            return { success: true };
+            const response = await apiWithOffline.post("/auth/resend-otp", { email });
+            return response.data;
         },
-        onSuccess: () => {
+        onSuccess: (response) => {
+            if (response.queued) {
+                toast.warning("You are currently offline. Resend will proceed once you're back online.");
+                return;
+            }
             toast.success("OTP sent");
             setTimer(30);
             setCanResend(false);
@@ -100,6 +108,7 @@ function OtpForm() {
             <Button
                 variant="ghost"
                 onClick={() => router.back()}
+                suppressHydrationWarning
                 className="w-fit flex items-center text-gray-800 font-medium mb-6 hover:text-black transition-colors px-0 group"
             >
                 <ChevronLeft size={24} className="mr-1 group-hover:-translate-x-1 transition-transform" />
@@ -123,6 +132,7 @@ function OtpForm() {
                         value={digit}
                         onChange={(e) => handleChange(index, e.target.value)}
                         onKeyDown={(e) => handleKeyDown(index, e)}
+                        suppressHydrationWarning
                         className="w-12 h-14 border border-gray-300 rounded-xl text-center text-xl font-semibold focus-visible:ring-2 focus-visible:ring-[#219653] focus-visible:border-transparent transition-all"
                     />
                 ))}
@@ -137,6 +147,7 @@ function OtpForm() {
                     <Button
                         variant="link"
                         onClick={() => router.push("/signup")}
+                        suppressHydrationWarning
                         className="text-[#219653] text-sm font-medium hover:underline p-0 h-auto"
                     >
                         Change ?
@@ -150,6 +161,7 @@ function OtpForm() {
                             variant="link"
                             onClick={() => resendMutation.mutate()}
                             disabled={resendMutation.isPending}
+                            suppressHydrationWarning
                             className="text-[#219653] font-medium hover:underline p-0 h-auto"
                         >
                             {resendMutation.isPending ? "Resending..." : "Resend"}
@@ -164,6 +176,7 @@ function OtpForm() {
                 <Button
                     onClick={handleVerify}
                     disabled={verifyMutation.isPending}
+                    suppressHydrationWarning
                     className="w-full bg-[#219653] py-6 rounded-full text-white font-semibold text-lg hover:bg-[#1A7B44] shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                     {verifyMutation.isPending ? (

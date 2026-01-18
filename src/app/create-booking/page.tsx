@@ -43,7 +43,7 @@ import { useForm, useFieldArray, Controller, SubmitHandler } from "react-hook-fo
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
 const memberSchema = z.object({
@@ -113,7 +113,7 @@ function CreateBookingPage() {
     const { data: tripResponse, isLoading: tripLoading } = useQuery({
         queryKey: ["trip", tripId],
         queryFn: async () => {
-            const response = await api.get(`/trips/${tripId}`);
+            const response = await apiWithOffline.get(`/trips/${tripId}`);
             return response.data;
         },
         enabled: !!tripId,
@@ -176,15 +176,19 @@ function CreateBookingPage() {
                 formData.append("screenshot", selectedFile);
             }
 
-            const response = await api.post("/bookings", formData, {
+            const response = await apiWithOffline.post("/bookings", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
             return response.data;
         },
-        onSuccess: () => {
-            toast.success("Booking created successfully!");
+        onSuccess: (response) => {
+            if (response.queued) {
+                toast.info("Booking queued! It will sync when you're online.");
+            } else {
+                toast.success("Booking created successfully!");
+            }
             router.push(`/manage-bookings/${tripId}`);
         },
         onError: (error: any) => {

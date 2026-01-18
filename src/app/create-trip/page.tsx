@@ -19,7 +19,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
 const createTripSchema = z.object({
@@ -69,11 +69,15 @@ function CreateTripPage() {
                 startDate: format(values.startDate, "yyyy-MM-dd"),
                 endDate: format(values.endDate, "yyyy-MM-dd"),
             };
-            const response = await api.post("/trips", formattedValues);
+            const response = await apiWithOffline.post("/trips", formattedValues);
             return response.data;
         },
-        onSuccess: () => {
-            toast.success("Trip created successfully!");
+        onSuccess: (response) => {
+            if (response.queued) {
+                toast.info("Trip creation queued! It will sync when you're online.");
+            } else {
+                toast.success("Trip created successfully!");
+            }
             router.push("/"); // Redirect to dashboard
         },
         onError: (error: any) => {

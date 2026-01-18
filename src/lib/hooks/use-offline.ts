@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { offlineQueue } from '@/lib/offline-queue';
 import { syncService } from '@/lib/sync-service';
+import { useQueryClient } from '@tanstack/react-query';
 
 /**
  * Hook to track online/offline status
@@ -38,6 +39,7 @@ export function useOnlineStatus() {
 export function usePendingSync() {
   const [pendingCount, setPendingCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const updatePendingCount = async () => {
@@ -59,6 +61,7 @@ export function usePendingSync() {
     try {
       await offlineQueue.processPendingRequests();
       await syncService.syncAll();
+      queryClient.invalidateQueries();
       const count = await offlineQueue.getPendingCount();
       setPendingCount(count);
     } catch (error) {

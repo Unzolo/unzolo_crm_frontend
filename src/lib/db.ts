@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = 'unzolo_crm_db';
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 
 // Store names
 export const STORES = {
@@ -11,6 +11,8 @@ export const STORES = {
   TRIPS: 'trips',
   PENDING_REQUESTS: 'pending_requests',
   SYNC_QUEUE: 'sync_queue',
+  STATS: 'stats',
+  PROFILE: 'profile',
 } as const;
 
 export interface PendingRequest {
@@ -74,6 +76,16 @@ class Database {
           const syncStore = db.createObjectStore(STORES.SYNC_QUEUE, { keyPath: 'id' });
           syncStore.createIndex('synced', 'synced', { unique: false });
           syncStore.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+
+        // Create stats store
+        if (!db.objectStoreNames.contains(STORES.STATS)) {
+          db.createObjectStore(STORES.STATS, { keyPath: 'id' });
+        }
+
+        // Create profile store
+        if (!db.objectStoreNames.contains(STORES.PROFILE)) {
+          db.createObjectStore(STORES.PROFILE, { keyPath: 'id' });
         }
       };
     });

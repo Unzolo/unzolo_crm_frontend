@@ -5,10 +5,10 @@ import {
     Users,
     Check,
     Calendar as CalendarIcon,
-
     Image as ImageIcon,
     CheckCircle2,
-    X
+    X,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,7 +21,7 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
     Popover,
@@ -32,14 +32,23 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { withAuth } from "@/components/auth/with-auth";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiWithOffline } from "@/lib/api";
 
 function CancelBookingPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const queryClient = useQueryClient();
+
+    // States
     const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [refundAmount, setRefundAmount] = useState("");
+    const [cancellationReason, setCancellationReason] = useState("Personal emergency");
+    const [paymentMethod, setPaymentMethod] = useState("GPay");
 
     // Parse booking data from query params
     const bookingData = useMemo(() => {
@@ -54,9 +63,12 @@ function CancelBookingPage() {
         }
     }, [searchParams]);
 
+    const bookingId = bookingData?._id;
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setScreenshotFile(file);
             const url = URL.createObjectURL(file);
             setImagePreview(url);
         }
@@ -66,6 +78,7 @@ function CancelBookingPage() {
         if (imagePreview) {
             URL.revokeObjectURL(imagePreview);
         }
+        setScreenshotFile(null);
         setImagePreview(null);
     };
 
@@ -85,6 +98,69 @@ function CancelBookingPage() {
         } else {
             setSelectedParticipants(participants.map((p: any) => p.id));
         }
+    };
+
+    const cancelBookingMutation = useMutation({
+        mutationFn: async () => {
+            if (!bookingId) throw new Error("Booking ID not found");
+
+            const formData = new FormData();
+
+            // Build body according to requirements
+            selectedParticipants.forEach(id => {
+                formData.append("memberIds[]", id);
+            });
+
+            if (refundAmount) {
+                formData.append("refundAmount", refundAmount);
+            }
+
+            formData.append("cancellationReason", cancellationReason);
+
+            if (paymentMethod) {
+                formData.append("paymentMethod", paymentMethod);
+            }
+
+            if (date) {
+                formData.append("paymentDate", format(date, "yyyy-MM-dd"));
+            }
+
+            if (screenshotFile) {
+                formData.append("screenshot", screenshotFile);
+            }
+
+            const response = await apiWithOffline.post(`/bookings/${bookingId}/cancel`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+
+            return response.data;
+        },
+        onSuccess: (data: any) => {
+            if (data.queued) {
+                toast.info("Cancellation request queued for offline sync");
+            } else {
+                toast.success("Cancellation processed successfully");
+            }
+            queryClient.invalidateQueries({ queryKey: ["bookings"] });
+            router.push(`/manage-bookings/${bookingData?.trip?._id || ''}`);
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to process cancellation");
+        }
+    });
+
+    const handleConfirm = () => {
+        if (selectedParticipants.length === 0) {
+            toast.error("Please select at least one participant to cancel");
+            return;
+        }
+        if (!cancellationReason) {
+            toast.error("Please provide a cancellation reason");
+            return;
+        }
+        cancelBookingMutation.mutate();
     };
 
     return (
@@ -168,7 +244,7 @@ function CancelBookingPage() {
                         <div className="grid grid-cols-2 gap-y-2">
                             <div className="space-y-1">
                                 <p className="text-sm text-gray-400 font-medium">Paid Amount</p>
-                                <p className="text-lg font-semibold text-[#219653]">₹0</p>
+                                <p className="text-lg font-semibold text-[#219653]">₹{bookingData?.amount || 0}</p>
                             </div>
                             <div className="space-y-1 text-right">
                                 <p className="text-sm text-gray-400 font-medium">Cancellation Charges</p>
@@ -193,22 +269,24 @@ function CancelBookingPage() {
                 {/* Form Fields */}
                 <div className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-black ml-1">Canellation Reason</label>
-                        <Select defaultValue="user-not-available">
+                        <label className="text-sm font-bold text-black ml-1">Cancellation Reason</label>
+                        <Select value={cancellationReason} onValueChange={setCancellationReason}>
                             <SelectTrigger className="h-14 bg-gray-50/50 border-[#E2F1E8] rounded-lg w-full mt-1 focus:ring-[#219653] text-gray-400">
                                 <SelectValue placeholder="Select Reason" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="user-not-available">User not available</SelectItem>
-                                <SelectItem value="trip-cancelled">Trip cancelled</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
+                                <SelectItem value="Personal emergency">Personal emergency</SelectItem>
+                                <SelectItem value="Health issues">Health issues</SelectItem>
+                                <SelectItem value="Travel plan change">Travel plan change</SelectItem>
+                                <SelectItem value="Trip cancelled by provider">Trip cancelled by provider</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="space-y-2">
                         <label className="text-sm font-bold text-black ml-1">Payment Method</label>
-                        <Select defaultValue="GPay">
+                        <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                             <SelectTrigger className="h-14 bg-gray-50/50 border-[#E2F1E8] rounded-lg mt-1 w-full focus:ring-[#219653] text-gray-400">
                                 <SelectValue placeholder="Select Method" />
                             </SelectTrigger>
@@ -216,6 +294,7 @@ function CancelBookingPage() {
                                 <SelectItem value="GPay">GPay</SelectItem>
                                 <SelectItem value="PhonePe">PhonePe</SelectItem>
                                 <SelectItem value="Cash">Cash</SelectItem>
+                                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -227,7 +306,7 @@ function CancelBookingPage() {
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                        "w-full h-14 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-lg mt-1 relative px-4",
+                                        "w-full h-14 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-lg mt-1 relative px-4 text-black",
                                         !date && "text-muted-foreground"
                                     )}
                                 >
@@ -289,8 +368,19 @@ function CancelBookingPage() {
 
             {/* Sticky Footer */}
             <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 flex gap-4">
-                <Button className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-5 rounded-full text-white">
-                    Confirm Cancellation
+                <Button
+                    onClick={handleConfirm}
+                    disabled={cancelBookingMutation.isPending}
+                    className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-5 rounded-full text-white"
+                >
+                    {cancelBookingMutation.isPending ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            Processing...
+                        </>
+                    ) : (
+                        "Confirm Cancellation"
+                    )}
                 </Button>
                 <Button
                     variant="outline"

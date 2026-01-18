@@ -18,7 +18,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
 const editTripSchema = z.object({
@@ -59,7 +59,7 @@ function EditTripPage() {
     const { data: tripResponse, isLoading: isFetching } = useQuery({
         queryKey: ["trip", tripId],
         queryFn: async () => {
-            const response = await api.get(`/trips/${tripId}`);
+            const response = await apiWithOffline.get(`/trips/${tripId}`);
             return response.data;
         },
         enabled: !!tripId,
@@ -87,11 +87,15 @@ function EditTripPage() {
                 startDate: format(values.startDate, "yyyy-MM-dd"),
                 endDate: format(values.endDate, "yyyy-MM-dd"),
             };
-            const response = await api.patch(`/trips/${tripId}`, formattedValues);
+            const response = await apiWithOffline.patch(`/trips/${tripId}`, formattedValues);
             return response.data;
         },
-        onSuccess: () => {
-            toast.success("Trip updated successfully!");
+        onSuccess: (response) => {
+            if (response.queued) {
+                toast.info("Trip update queued! It will sync when you're online.");
+            } else {
+                toast.success("Trip updated successfully!");
+            }
             router.push("/");
         },
         onError: (error: any) => {

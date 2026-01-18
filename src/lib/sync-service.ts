@@ -70,12 +70,102 @@ class SyncService {
       await Promise.all([
         this.syncTrips(),
         this.syncBookings(),
+        this.syncStats(),
+        this.syncProfile(),
       ]);
       console.log('✅ Full sync completed successfully!');
     } catch (error) {
       console.error('❌ Sync failed:', error);
     } finally {
       this.isSyncing = false;
+    }
+  }
+
+  /**
+   * Sync profile from API to local storage
+   */
+  async syncProfile(): Promise<void> {
+    try {
+      const response = await api.get('/auth/profile');
+      if (response.data && response.data.data) {
+        await db.put(STORES.PROFILE, {
+          id: 'current',
+          ...response.data.data,
+          timestamp: Date.now(),
+        });
+        console.log('✅ Synced profile to local storage');
+      }
+    } catch (error) {
+      console.error('❌ Failed to sync profile:', error);
+    }
+  }
+
+  /**
+   * Get profile from local storage (with fallback to API)
+   */
+  async getProfile(): Promise<any> {
+    try {
+      const localProfile = await db.get<any>(STORES.PROFILE, 'current');
+      if (localProfile) {
+        if (navigator.onLine) {
+          this.syncProfile().catch(console.error);
+        }
+        return localProfile;
+      }
+
+      if (navigator.onLine) {
+        await this.syncProfile();
+        return await db.get<any>(STORES.PROFILE, 'current');
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Failed to get profile:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Sync dashboard stats from API to local storage
+   */
+  async syncStats(): Promise<void> {
+    try {
+      const response = await api.get('/dashboard/stats');
+      if (response.data && response.data.data) {
+        await db.put(STORES.STATS, {
+          id: 'dashboard',
+          ...response.data.data,
+          timestamp: Date.now(),
+        });
+        console.log('✅ Synced dashboard stats to local storage');
+      }
+    } catch (error) {
+      console.error('❌ Failed to sync dashboard stats:', error);
+    }
+  }
+
+  /**
+   * Get stats from local storage (with fallback to API)
+   */
+  async getStats(): Promise<any> {
+    try {
+      const localStats = await db.get<any>(STORES.STATS, 'dashboard');
+      if (localStats) {
+        if (navigator.onLine) {
+          this.syncStats().catch(console.error);
+        }
+        return localStats;
+      }
+
+      if (navigator.onLine) {
+        await this.syncStats();
+        return await db.get<any>(STORES.STATS, 'dashboard');
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Failed to get stats:', error);
+      return null;
     }
   }
 
@@ -291,6 +381,8 @@ class SyncService {
     await Promise.all([
       db.clear(STORES.TRIPS),
       db.clear(STORES.BOOKINGS),
+      db.clear(STORES.STATS),
+      db.clear(STORES.PROFILE),
     ]);
     console.log('🗑️ All local data cleared');
   }
