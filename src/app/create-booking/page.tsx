@@ -37,7 +37,7 @@ import {
     DrawerTitle
 } from "@/components/ui/drawer";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { withAuth } from "@/components/auth/with-auth";
 import { useForm, useFieldArray, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -592,4 +592,12 @@ function CreateBookingPage() {
     );
 }
 
-export default withAuth(CreateBookingPage);
+function CreateBookingPageContainer() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center"><Loader2 className="w-10 h-10 text-[#219653] animate-spin" /></div>}>
+            <CreateBookingPage />
+        </Suspense>
+    );
+}
+
+export default withAuth(CreateBookingPageContainer);

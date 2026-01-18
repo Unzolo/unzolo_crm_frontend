@@ -21,7 +21,7 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
     Popover,
@@ -304,4 +304,12 @@ function CancelBookingPage() {
     );
 }
 
-export default withAuth(CancelBookingPage);
+function CancelBookingPageContainer() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center">Loading...</div>}>
+            <CancelBookingPage />
+        </Suspense>
+    );
+}
+
+export default withAuth(CancelBookingPageContainer);

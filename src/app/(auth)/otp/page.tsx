@@ -2,14 +2,14 @@
 
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "sonner";
 
-export default function OtpPage() {
+function OtpForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email") || "your email";
@@ -179,3 +179,12 @@ export default function OtpPage() {
         </div>
     );
 }
+
+export default function OtpPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="w-8 h-8 animate-spin text-[#219653]" /></div>}>
+            <OtpForm />
+        </Suspense>
+    );
+}
+
