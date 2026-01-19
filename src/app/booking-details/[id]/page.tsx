@@ -54,7 +54,7 @@ function BookingDetailsPage() {
     const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [paymentType, setPaymentType] = useState<"advance" | "balance" | "custom">("advance");
+    const [paymentType, setPaymentType] = useState<"advance" | "balance" | "custom">("balance");
     const [customAmount, setCustomAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("gpay");
 
@@ -98,20 +98,17 @@ function BookingDetailsPage() {
 
             if (paymentType === "balance") {
                 finalAmount = remaining;
-            } else if (paymentType === "advance") {
-                finalAmount = advanceAmount;
             } else {
                 finalAmount = parseFloat(customAmount);
             }
 
             if (isNaN(finalAmount) || finalAmount <= 0) {
-                throw new Error("Invalid amount");
+                throw new Error("Please enter a valid amount");
             }
 
             if (finalAmount > remaining) {
-                throw new Error("Amount cannot exceed the remaining balance");
+                throw new Error(`Amount cannot exceed the remaining balance of ₹${remaining.toLocaleString()}`);
             }
-
 
             const formData = new FormData();
             formData.append("amount", finalAmount.toString());
@@ -142,7 +139,8 @@ function BookingDetailsPage() {
             queryClient.invalidateQueries({ queryKey: ["bookings"] });
         },
         onError: (error: any) => {
-            toast.error(error.response?.data?.message || "Failed to add payment");
+            const errorMessage = error.response?.data?.message || error.message || "Failed to add payment";
+            toast.error(errorMessage);
         }
     });
 
@@ -244,37 +242,46 @@ function BookingDetailsPage() {
                             <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
                             <h4 className="text-lg font-semibold text-black">Payment Summary</h4>
                         </div>
-                        <Card className="p-4 border-none bg-gray-50/50 rounded-[20px] shadow-none">
-                            <div className="grid grid-cols-2 gap-y-3">
+                        <Card className="p-4 border-none bg-gray-50/50 rounded-[24px] shadow-none">
+                            <div className="grid grid-cols-2 gap-y-4">
+                                {/* Header: Target vs Collected */}
                                 <div className="space-y-0.5">
-                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Original Total</p>
-                                    <p className="text-lg font-bold text-gray-400 line-through">₹{initialTotal}</p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold">Total Amount</p>
+                                    <p className="text-xl font-bold text-[#219653]">₹{parseFloat(booking.totalCost || "0").toLocaleString()}</p>
                                 </div>
                                 <div className="space-y-0.5 text-right">
-                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Revised Total</p>
-                                    <p className="text-lg font-bold text-[#219653]">₹{booking.totalCost}</p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold">Paid so far</p>
+                                    <p className="text-xl font-bold text-black">₹{parseFloat(booking.paidAmount || "0").toLocaleString()}</p>
                                 </div>
-                                <div className="space-y-0.5">
-                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Total Paid Initially</p>
-                                    <p className="text-lg font-bold text-black">₹{booking.paidAmount}</p>
-                                </div>
-                                {(booking.refundAmount && parseFloat(booking.refundAmount) > 0) && (
-                                    <div className="space-y-0.5 text-right">
-                                        <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Refunded Amount</p>
-                                        <p className="text-lg font-bold text-orange-500">₹{booking.refundAmount}</p>
+
+                                {/* Intermediate: Refund if any */}
+                                {parseFloat(booking.refundAmount || "0") > 0 && (
+                                    <div className="col-span-2 flex items-center justify-between py-2 px-3 bg-white/60 rounded-xl border border-gray-100/50">
+                                        <p className="text-[9px] text-gray-400 uppercase font-bold tracking-tight">Refunded Amount</p>
+                                        <p className="text-sm font-bold text-orange-500">₹{parseFloat(booking.refundAmount || "0").toLocaleString()}</p>
                                     </div>
                                 )}
-                                <div className="col-span-2 my-1 h-px bg-gray-200/50" />
-                                <div className="space-y-0.5">
-                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Remaining balance</p>
-                                    <p className="text-lg font-bold text-red-500">₹{Math.max(0, booking.remainingAmount || 0)}</p>
-                                </div>
-                                {booking.netPaidAmount !== undefined && (
-                                    <div className="space-y-0.5 text-right">
-                                        <p className="text-xs text-gray-500 uppercase tracking-tight font-bold">Net Collected</p>
-                                        <p className="text-lg font-extrabold text-[#219653]">₹{booking.netPaidAmount}</p>
+
+                                {/* Result: Balance */}
+                                <div className="col-span-2 pt-2 border-t border-dashed border-gray-200">
+                                    <div className="flex justify-between items-end mt-1">
+                                        <p className="text-xs text-gray-500 font-bold uppercase tracking-tight mb-1">
+                                            {parseFloat(booking.remainingAmount || "0") < 0 ? "Refund Due" : "Remaining Balance"}
+                                        </p>
+                                        <p className={cn(
+                                            "text-2xl font-semibold leading-none",
+                                            parseFloat(booking.remainingAmount || "0") < 0 ? "text-orange-500" :
+                                                parseFloat(booking.remainingAmount || "0") === 0 ? "text-[#219653]" : "text-red-500"
+                                        )}>
+                                            ₹{parseFloat(booking.remainingAmount || "0").toLocaleString()}
+                                        </p>
                                     </div>
-                                )}
+                                    {/* {parseFloat(booking.remainingAmount || "0") < 0 && (
+                                        <p className="text-right text-[10px] text-orange-400 font-semibold mt-1 uppercase italic">
+                                            Return this amount to customer
+                                        </p>
+                                    )} */}
+                                </div>
                             </div>
                         </Card>
                     </div>
@@ -381,29 +388,6 @@ function BookingDetailsPage() {
                         </div>
 
                         <div className="space-y-4 mb-8">
-                            {/* Advance Payment */}
-                            <Card
-                                onClick={() => setPaymentType("advance")}
-                                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between ${paymentType === "advance" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30 shadow-none border-none"}`}
-                            >
-                                <div className="flex flex-row gap-4">
-                                    <div className="relative pl-4">
-                                        <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
-                                            <Landmark className="w-6 h-6 text-white" />
-                                        </div>
-                                        {paymentType === "advance" && (
-                                            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
-                                                <Check className="w-3 h-3 text-[#219653]" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-base font-bold text-black">Advance Payment</p>
-                                        <p className="text-xs text-gray-400 font-medium">Pay advance amount</p>
-                                    </div>
-                                </div>
-                                <span className="text-lg font-bold text-[#219653]">₹{advanceAmount}</span>
-                            </Card>
                             {/* Full Payment */}
                             <Card
                                 onClick={() => setPaymentType("balance")}
@@ -554,7 +538,28 @@ function BookingDetailsPage() {
                     <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 flex gap-4">
                         <Button
                             className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg shadow-lg shadow-green-100"
-                            onClick={() => addPaymentMutation.mutate()}
+                            onClick={() => {
+                                const remaining = parseFloat(booking.remainingAmount);
+                                let finalAmount = 0;
+
+                                if (paymentType === "balance") {
+                                    finalAmount = remaining;
+                                } else {
+                                    finalAmount = parseFloat(customAmount);
+                                }
+
+                                if (isNaN(finalAmount) || finalAmount <= 0) {
+                                    toast.error("Please enter a valid amount");
+                                    return;
+                                }
+
+                                if (finalAmount > remaining) {
+                                    toast.error(`Amount cannot exceed the remaining balance of ₹${remaining.toLocaleString()}`);
+                                    return;
+                                }
+
+                                addPaymentMutation.mutate();
+                            }}
                             disabled={addPaymentMutation.isPending}
                         >
                             {addPaymentMutation.isPending ? (
