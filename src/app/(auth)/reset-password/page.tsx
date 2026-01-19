@@ -44,7 +44,7 @@ function ResetPasswordForm() {
         mutationFn: async (values: ResetPasswordValues) => {
             const response = await apiWithOffline.post("/auth/reset-password", {
                 token,
-                password: values.password,
+                newPassword: values.password,
             });
             return response.data;
         },
