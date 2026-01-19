@@ -73,20 +73,19 @@ function CreateTripPage() {
             return response.data;
         },
         onSuccess: (response) => {
-            if (response.queued) {
-                toast.info("Trip creation queued! It will sync when you're online.");
-                router.push("/");
+            toast.success("Trip created successfully!");
+            const tripId = response.data?._id || response.data?.id;
+            if (tripId) {
+                router.push(`/manage-bookings/${tripId}`);
             } else {
-                toast.success("Trip created successfully!");
-                const tripId = response.data?._id || response.data?.id;
-                if (tripId) {
-                    router.push(`/manage-bookings/${tripId}`);
-                } else {
-                    router.push("/");
-                }
+                router.push("/");
             }
         },
         onError: (error: any) => {
+            if (error.isOffline) {
+                router.push("/");
+                return;
+            }
             toast.error(error.response?.data?.message || "Failed to create trip. Please try again.");
         },
     });

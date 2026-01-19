@@ -125,12 +125,8 @@ function BookingDetailsPage() {
             });
             return response.data;
         },
-        onSuccess: (response) => {
-            if (response.queued) {
-                toast.info("Payment queued! It will sync when you're online.");
-            } else {
-                toast.success("Payment added successfully");
-            }
+        onSuccess: () => {
+            toast.success("Payment added successfully");
             setIsUpdatePaymentOpen(false);
             setCustomAmount("");
             setSelectedFile(null);
@@ -139,9 +135,16 @@ function BookingDetailsPage() {
             queryClient.invalidateQueries({ queryKey: ["bookings"] });
         },
         onError: (error: any) => {
+            if (error.isOffline) {
+                setIsUpdatePaymentOpen(false);
+                setCustomAmount("");
+                setSelectedFile(null);
+                setImagePreview(null);
+                return;
+            }
             const errorMessage = error.response?.data?.message || error.message || "Failed to add payment";
             toast.error(errorMessage);
-        }
+        },
     });
 
     if (isLoading) {

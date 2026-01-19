@@ -49,18 +49,13 @@ api.interceptors.response.use(
           config.headers as Record<string, string>
         );
         
-        // Return a custom response indicating the request was queued
-        return Promise.resolve({
-          data: { 
-            success: true, 
-            queued: true,
-            message: 'Request queued for sync when online' 
-          },
-          status: 202,
-          statusText: 'Queued',
-          headers: {},
-          config,
-        } as AxiosResponse);
+        // Throw a custom error indicating the request was queued
+        const offlineError = new Error('Action queued for sync when online') as any;
+        offlineError.isOffline = true;
+        offlineError.queued = true;
+        offlineError.config = config;
+        
+        return Promise.reject(offlineError);
       }
     }
 
@@ -179,8 +174,6 @@ export const apiWithOffline = {
       if (!navigator.onLine || error.message === 'Network Error') {
         console.log('📴 Offline - queueing POST request');
         
-        // If it's a specific entity creation, use SyncQueue for better local integration
-        // Otherwise use general PendingRequest
         const isCreation = (url === '/bookings' || url === '/trips' || url.includes('/payments')) && !url.includes('/cancel');
         
         if (isCreation) {
@@ -190,7 +183,6 @@ export const apiWithOffline = {
           
           await offlineQueue.addToSyncQueue('create', entity, data);
         } else {
-          // Serialized FormData if necessary (though modern browsers handle File/Blob in IndexedDB)
           await offlineQueue.addPendingRequest(
             url,
             'POST',
@@ -199,18 +191,10 @@ export const apiWithOffline = {
           );
         }
         
-        return {
-          data: { 
-            success: true, 
-            queued: true,
-            message: 'Request queued for sync when online',
-            data: isCreation ? { ...data, _id: `temp-${Date.now()}` } : data
-          } as T,
-          status: 202,
-          statusText: 'Queued',
-          headers: {},
-          config: config || {},
-        } as AxiosResponse<T>;
+        const offlineError = new Error('Action queued for sync when online') as any;
+        offlineError.isOffline = true;
+        offlineError.queued = true;
+        throw offlineError;
       }
       
       throw error;
@@ -242,17 +226,10 @@ export const apiWithOffline = {
         
         await offlineQueue.addToSyncQueue('update', entity, data);
         
-        return {
-          data: { 
-            success: true, 
-            queued: true,
-            message: 'Request queued for sync when online' 
-          } as T,
-          status: 202,
-          statusText: 'Queued',
-          headers: {},
-          config: config || {},
-        } as AxiosResponse<T>;
+        const offlineError = new Error('Action queued for sync when online') as any;
+        offlineError.isOffline = true;
+        offlineError.queued = true;
+        throw offlineError;
       }
       
       throw error;
@@ -287,17 +264,10 @@ export const apiWithOffline = {
           await offlineQueue.addToSyncQueue('delete', entity, { _id: id });
         }
         
-        return {
-          data: { 
-            success: true, 
-            queued: true,
-            message: 'Request queued for sync when online' 
-          } as T,
-          status: 202,
-          statusText: 'Queued',
-          headers: {},
-          config: config || {},
-        } as AxiosResponse<T>;
+        const offlineError = new Error('Action queued for sync when online') as any;
+        offlineError.isOffline = true;
+        offlineError.queued = true;
+        throw offlineError;
       }
       
       throw error;
@@ -329,17 +299,10 @@ export const apiWithOffline = {
         
         await offlineQueue.addToSyncQueue('update', entity, data);
         
-        return {
-          data: { 
-            success: true, 
-            queued: true,
-            message: 'Request queued for sync when online' 
-          } as T,
-          status: 202,
-          statusText: 'Queued',
-          headers: {},
-          config: config || {},
-        } as AxiosResponse<T>;
+        const offlineError = new Error('Action queued for sync when online') as any;
+        offlineError.isOffline = true;
+        offlineError.queued = true;
+        throw offlineError;
       }
       
       throw error;

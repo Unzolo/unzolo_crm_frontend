@@ -86,7 +86,7 @@ function SelectTripPage() {
 
     const formatTripDate = (start: string, end: string) => {
         try {
-            return `${format(new Date(start), "MMM dd")} - ${format(new Date(end), "dd, yyyy")}`;
+            return `${format(new Date(start), "do MMM")} - ${format(new Date(end), "do MMM")}`;
         } catch {
             return "Date TBD";
         }
@@ -109,92 +109,90 @@ function SelectTripPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-y-auto pb-10">
-                <div className="mb-6 mt-2">
-                    <div className="flex items-center gap-2 mb-2">
-                        <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
-                        <h2 className="text-lg font-bold text-black">Select Trip</h2>
+            <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-hidden flex flex-col">
+                <div className="shrink-0">
+                    <div className="mb-6 mt-2">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                            <h2 className="text-lg font-bold text-black">Select Trip</h2>
+                        </div>
+                        <p className="text-xs text-gray-400 font-medium ml-3">Choose a camp or package to manage its bookings</p>
                     </div>
-                    <p className="text-xs text-gray-400 font-medium ml-3">Choose a camp or package to manage its bookings</p>
-                </div>
 
-                {/* Search and Sort */}
-                <div className="flex gap-2 mb-6 px-1">
-                    <div className="relative flex-1">
-                        <Input
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search by title or destination"
-                            className="h-12 bg-gray-50/50 border-gray-100 rounded-xl pr-10 focus-visible:ring-[#219653] placeholder:text-sm"
-                        />
-                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#219653]" />
-                    </div>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-none bg-gray-50/50">
-                                <SlidersHorizontal className="w-5 h-5 text-[#219653]" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-3 rounded-2xl border-none shadow-xl bg-white" align="end">
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sort By</p>
-                                    <div className="grid grid-cols-1 gap-1">
-                                        {[
-                                            { label: "Trip Date", value: "date" },
-                                            { label: "Price", value: "price" },
-                                            { label: "Title", value: "title" },
-                                        ].map((option) => (
-                                            <Button
-                                                key={option.value}
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setSortBy(option.value as any)}
+                    {/* Search and Sort */}
+                    <div className="flex gap-2 mb-6 px-1">
+                        <div className="relative flex-1">
+                            <Input
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search by title or destination"
+                                className="h-12 bg-gray-50/50 border-gray-100 rounded-xl pr-10 focus-visible:ring-[#219653] placeholder:text-sm"
+                            />
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#219653]" />
+                        </div>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-none bg-gray-50/50">
+                                    <SlidersHorizontal className="w-5 h-5 text-[#219653]" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-56 p-3 rounded-2xl border-none shadow-xl bg-white" align="end">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sort By</p>
+                                        <div className="grid grid-cols-1 gap-1">
+                                            {[
+                                                { label: "Trip Date", value: "date" },
+                                                { label: "Price", value: "price" },
+                                                { label: "Title", value: "title" },
+                                            ].map((option) => (
+                                                <Button
+                                                    key={option.value}
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setSortBy(option.value as any)}
+                                                    className={cn(
+                                                        "w-full justify-start rounded-lg text-sm",
+                                                        sortBy === option.value ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
+                                                    )}
+                                                >
+                                                    {option.label}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="h-px bg-gray-100" />
+                                    <div className="space-y-2">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Order</p>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setSortOrder("asc")}
                                                 className={cn(
-                                                    "w-full justify-start rounded-lg text-sm",
-                                                    sortBy === option.value ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
+                                                    "flex-1 rounded-lg text-sm py-2 px-3 transition-colors",
+                                                    sortOrder === "asc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
                                                 )}
                                             >
-                                                {option.label}
-                                            </Button>
-                                        ))}
+                                                Asc
+                                            </button>
+                                            <button
+                                                onClick={() => setSortOrder("desc")}
+                                                className={cn(
+                                                    "flex-1 rounded-lg text-sm py-2 px-3 transition-colors",
+                                                    sortOrder === "desc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
+                                                )}
+                                            >
+                                                Desc
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="h-px bg-gray-100" />
-                                <div className="space-y-2">
-                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Order</p>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setSortOrder("asc")}
-                                            className={cn(
-                                                "flex-1 rounded-lg text-sm",
-                                                sortOrder === "asc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
-                                            )}
-                                        >
-                                            Asc
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setSortOrder("desc")}
-                                            className={cn(
-                                                "flex-1 rounded-lg text-sm",
-                                                sortOrder === "desc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
-                                            )}
-                                        >
-                                            Desc
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 </div>
 
-                <Tabs defaultValue="camps" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-[#E2F1E8] rounded-xl p-1 h-11 mb-6">
+                <Tabs defaultValue="camps" className="w-full flex-1 flex flex-col overflow-hidden">
+                    <TabsList className="grid w-full grid-cols-2 bg-[#E2F1E8] rounded-xl p-1 h-11 shrink-0 mb-4">
                         <TabsTrigger
                             value="camps"
                             className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-bold"
@@ -209,8 +207,8 @@ function SelectTripPage() {
                         </TabsTrigger>
                     </TabsList>
 
-                    <div className="mt-2">
-                        <TabsContent value="camps" className="space-y-4 outline-none">
+                    <div className="flex-1 overflow-y-auto pb-4 pr-1 -mr-1">
+                        <TabsContent value="camps" className="space-y-4 outline-none m-0">
                             {tripsLoading ? (
                                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                                     <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
@@ -233,7 +231,7 @@ function SelectTripPage() {
                             )}
                         </TabsContent>
 
-                        <TabsContent value="packages" className="space-y-4 outline-none">
+                        <TabsContent value="packages" className="space-y-4 outline-none m-0">
                             {tripsLoading ? (
                                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                                     <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
@@ -265,7 +263,7 @@ function SelectTripPage() {
 function TripCard({ trip, onClick, onEdit, onDelete }: { trip: any, onClick: () => void, onEdit: () => void, onDelete: () => void }) {
     const formatTripDate = (start: string, end: string) => {
         try {
-            return `${format(new Date(start), "MMM dd")} - ${format(new Date(end), "dd, yyyy")}`;
+            return `${format(new Date(start), "do MMM")} - ${format(new Date(end), "do MMM")}`;
         } catch {
             return "Date TBD";
         }
@@ -274,45 +272,45 @@ function TripCard({ trip, onClick, onEdit, onDelete }: { trip: any, onClick: () 
     return (
         <Card
             onClick={onClick}
-            className="p-3 rounded-[16px] shadow-none border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md hover:ring-[#219653]/30 transition-all cursor-pointer group active:scale-[0.99] gap-2 space-y-2"
+            className="p-2.5 px-3 rounded-[16px] shadow-none border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md hover:ring-[#219653]/30 transition-all cursor-pointer group active:scale-[0.99] space-y-1.5"
         >
-            <div className="flex justify-between items-start mb-2">
-                <div className="min-w-0 flex-1 pr-4">
-                    <h3 className="text-base font-bold text-black group-hover:text-[#219653] transition-colors truncate">{trip.title}</h3>
-                    <div className="flex items-center gap-1.5 mt-1">
-                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-xs text-gray-400 font-medium truncate">{trip.destination}</span>
+            <div className="flex justify-between items-start ">
+                <div className="min-w-0 flex-1 pr-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                        <h3 className="text-sm font-bold text-black group-hover:text-[#219653] transition-colors truncate">
+                            {trip.title}
+                        </h3>
+                        <div className="flex items-center gap-1 shrink-0 bg-[#E2F1E8]/30 px-2 py-0.5 rounded-md">
+                            <Calendar className="w-2.5 h-2.5 text-[#219653]" />
+                            <span className="text-[9px] font-bold text-[#219653]">
+                                {formatTripDate(trip.startDate, trip.endDate)}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-2">
+                        <MapPin className="w-3 h-3 text-gray-400" />
+                        <span className="text-[12px] text-gray-400 font-medium truncate">{trip.destination}</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 text-[#219653] bg-[#E2F1E8]/50 hover:bg-[#E2F1E8] rounded-xl"
+                        className="h-8 w-8 text-[#219653] bg-[#E2F1E8]/50 hover:bg-[#E2F1E8] rounded-lg"
                         onClick={(e) => {
                             e.stopPropagation();
                             onEdit();
                         }}
                     >
-                        <Pencil className="w-4 h-4" />
+                        <Pencil className="w-3.5 h-3.5" />
                     </Button>
                 </div>
             </div>
 
-            <div className="h-px bg-gray-50 my-0" />
-
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#E2F1E8] flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-[#219653]" />
-                    </div>
-                    <span className="text-xs font-bold text-gray-700">
-                        {formatTripDate(trip.startDate, trip.endDate)}
-                    </span>
-                </div>
-                <div className="text-right">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block -mb-1 tracking-wider">Total Price</span>
-                    <span className="text-base font-extrabold text-[#219653]">₹{parseFloat(trip.price).toLocaleString()}</span>
+            <div className="flex items-center justify-between -mt-3">
+                <div className="text-left">
+                    <span className="text-[9px] text-gray-400 font-bold uppercase block -mb-0.5 tracking-wider">Total Price</span>
+                    <span className="text-sm font-extrabold text-[#219653]">₹{parseFloat(trip.price).toLocaleString()}</span>
                 </div>
             </div>
         </Card>

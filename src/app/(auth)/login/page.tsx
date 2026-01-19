@@ -56,11 +56,6 @@ export default function LoginPage() {
             return response.data;
         },
         onSuccess: (response) => {
-            if (response.queued) {
-                toast.warning("You are currently offline. Login will proceed once you're back online.");
-                return;
-            }
-
             const token = response?.data?.token;
             const partner = response?.data?.partner;
 
@@ -76,6 +71,7 @@ export default function LoginPage() {
             }
         },
         onError: (error: any) => {
+            if (error.isOffline) return; // Handled globally
             toast.error(error.response?.data?.message || "Login failed. Please check your credentials.");
         },
     });

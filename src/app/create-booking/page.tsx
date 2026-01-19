@@ -186,16 +186,18 @@ function CreateBookingPage() {
             });
             return response.data;
         },
-        onSuccess: (response) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["bookings", tripId] });
-            if (response.queued) {
-                toast.info("Booking queued! It will sync when you're online.");
-            } else {
-                toast.success("Booking created successfully!");
-            }
+            toast.success("Booking created successfully!");
             router.push(`/manage-bookings/${tripId}`);
         },
         onError: (error: any) => {
+            if (error.isOffline) {
+                // For offline booking, we still want to redirect to manage bookings
+                // so the user can see their temporary booking
+                router.push(`/manage-bookings/${tripId}`);
+                return;
+            }
             toast.error(error.response?.data?.message || "Failed to create booking");
         },
     });

@@ -416,14 +416,10 @@ function ManageBookingPage() {
                                                 <span className="flex items-center gap-1">
                                                     <Users className="w-3 h-3" /> {activeMemberCount} members
                                                 </span>
-                                                {!isPartialCancelled && !isCancelled ? (
+                                                {!isCancelled && !isPartialCancelled ? (
                                                     <span className="flex items-center gap-1 text-[12px]">
                                                         <span className="text-gray-400">₹{paidAmount.toLocaleString()}</span>/
                                                         <span className="text-[#219653]">₹{totalAmount.toLocaleString()}</span>
-                                                    </span>
-                                                ) : isPartialCancelled ? (
-                                                    <span className="text-orange-600 font-bold bg-white px-2 py-0.5 rounded-md border border-orange-100">
-                                                        Refund: ₹{refundAmount.toLocaleString()}
                                                     </span>
                                                 ) : null}
                                                 <Badge className={`border-none shadow-none text-[8px] px-2 py-0.5 rounded-md font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount)}`}>

@@ -47,16 +47,13 @@ export default function SignupPage() {
             await new Promise((resolve) => setTimeout(resolve, 1500));
             return response.data;
         },
-        onSuccess: (response, variables) => {
-            if (response.queued) {
-                toast.warning("You are currently offline. Signup will proceed once you're back online.");
-                return;
-            }
+        onSuccess: (_response, variables) => {
             setEmail(variables.email);
             toast.success("OTP sent");
             router.push(`/otp?email=${encodeURIComponent(variables.email)}`);
         },
         onError: (error: any) => {
+            if (error.isOffline) return; // Handled globally
             toast.error(error.response?.data?.message || "Something went wrong. Please try again.");
         },
     });

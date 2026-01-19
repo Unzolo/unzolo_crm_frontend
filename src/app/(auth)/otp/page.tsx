@@ -60,11 +60,6 @@ function OtpForm() {
             return response.data;
         },
         onSuccess: (response) => {
-            if (response.queued) {
-                toast.warning("You are currently offline. Verification will proceed once you're back online.");
-                return;
-            }
-
             // Store token and user data
             if (response.data) {
                 localStorage.setItem("token", response.data.token);
@@ -75,6 +70,7 @@ function OtpForm() {
             router.push("/");
         },
         onError: (error: any) => {
+            if (error.isOffline) return; // Handled globally
             toast.error(error.response?.data?.message || "Invalid OTP. Please try again.");
         },
     });
@@ -84,11 +80,7 @@ function OtpForm() {
             const response = await apiWithOffline.post("/auth/resend-otp", { email });
             return response.data;
         },
-        onSuccess: (response) => {
-            if (response.queued) {
-                toast.warning("You are currently offline. Resend will proceed once you're back online.");
-                return;
-            }
+        onSuccess: () => {
             toast.success("OTP sent");
             setTimer(30);
             setCanResend(false);
@@ -96,6 +88,7 @@ function OtpForm() {
             inputRefs.current[0]?.focus(); // Focus the first input field
         },
         onError: (error: any) => {
+            if (error.isOffline) return; // Handled globally
             toast.error(error.response?.data?.message || "Failed to resend OTP. Please try again later.");
         },
     });
