@@ -139,6 +139,15 @@ export default function LoginPage() {
                     )}
                 </div>
 
+                <div className="flex justify-end">
+                    <Link
+                        href="/forgot-password"
+                        className="text-xs font-bold text-[#219653] hover:underline"
+                    >
+                        Forgot Password?
+                    </Link>
+                </div>
+
                 <div className="pt-2">
                     <p className="text-sm text-gray-600">
                         Create a new account ?{" "}

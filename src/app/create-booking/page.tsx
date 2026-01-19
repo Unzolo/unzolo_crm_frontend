@@ -43,7 +43,7 @@ import { withAuth } from "@/components/auth/with-auth";
 import { useForm, useFieldArray, Controller, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -159,6 +159,8 @@ function CreateBookingPage() {
         }
     };
 
+    const queryClient = useQueryClient();
+
     const createBookingMutation = useMutation({
         mutationFn: async (data: CreateBookingValues) => {
             const formData = new FormData();
@@ -185,6 +187,7 @@ function CreateBookingPage() {
             return response.data;
         },
         onSuccess: (response) => {
+            queryClient.invalidateQueries({ queryKey: ["bookings", tripId] });
             if (response.queued) {
                 toast.info("Booking queued! It will sync when you're online.");
             } else {
