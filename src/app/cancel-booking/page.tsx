@@ -48,7 +48,7 @@ function CancelBookingPage() {
     const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [refundAmount, setRefundAmount] = useState("");
     const [cancellationReason, setCancellationReason] = useState("Personal emergency");
-    const [paymentMethod, setPaymentMethod] = useState("GPay");
+    const [paymentMethod, setPaymentMethod] = useState("gpay");
 
     // Parse booking data from query params
     const bookingData = useMemo(() => {
@@ -107,9 +107,7 @@ function CancelBookingPage() {
             const formData = new FormData();
 
             // Build body according to requirements
-            selectedParticipants.forEach(id => {
-                formData.append("memberIds", id);
-            });
+            formData.append("memberIds", JSON.stringify(selectedParticipants));
 
             if (refundAmount) {
                 formData.append("refundAmount", refundAmount);
@@ -129,11 +127,7 @@ function CancelBookingPage() {
                 formData.append("screenshot", screenshotFile);
             }
 
-            const response = await apiWithOffline.post(`/bookings/${bookingId}/cancel`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                }
-            });
+            const response = await apiWithOffline.post(`/bookings/${bookingId}/cancel`, formData);
 
             return response.data;
         },
@@ -144,9 +138,16 @@ function CancelBookingPage() {
                 toast.success("Cancellation processed successfully");
             }
             queryClient.invalidateQueries({ queryKey: ["bookings"] });
-            router.push(`/manage-bookings/${bookingData?.trip?._id || ''}`);
+            const tripId = bookingData?.trip?._id || bookingData?.trip?.id;
+            if (tripId) {
+                router.push(`/manage-bookings/${tripId}`);
+            } else {
+                router.push("/");
+            }
         },
         onError: (error: any) => {
+            console.log(error);
+
             toast.error(error.response?.data?.message || "Failed to process cancellation");
         }
     });
@@ -248,7 +249,7 @@ function CancelBookingPage() {
                         <div className="grid grid-cols-2 gap-y-2">
                             <div className="space-y-1">
                                 <p className="text-sm text-gray-400 font-medium">Paid Amount</p>
-                                <p className="text-lg font-semibold text-[#219653]">₹{bookingData?.amount || 0}</p>
+                                <p className="text-lg font-semibold text-[#219653]">₹{bookingData?.paidAmount || 0}</p>
                             </div>
                             <div className="space-y-1 text-right">
                                 <p className="text-sm text-gray-400 font-medium">Cancellation Charges</p>
@@ -262,7 +263,7 @@ function CancelBookingPage() {
                                         onChange={(e) => setRefundAmount(e.target.value)}
                                         placeholder="Enter amount"
                                         type="number"
-                                        className="h-10 text-lg font-bold text-center border-[#219653] focus-visible:ring-[#219653] bg-white"
+                                        className="h-10 placeholder:text-sm placeholder:text-gray-400 placeholder:font-medium text-lg font-bold text-center border-[#219653] focus-visible:ring-[#219653] bg-white"
                                     />
                                 </div>
                             </div>
@@ -295,10 +296,10 @@ function CancelBookingPage() {
                                 <SelectValue placeholder="Select Method" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="GPay">GPay</SelectItem>
-                                <SelectItem value="PhonePe">PhonePe</SelectItem>
-                                <SelectItem value="Cash">Cash</SelectItem>
-                                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                <SelectItem value="gpay">GPay</SelectItem>
+                                <SelectItem value="phonepe">PhonePe</SelectItem>
+                                <SelectItem value="cash">Cash</SelectItem>
+                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

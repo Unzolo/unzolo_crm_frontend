@@ -66,10 +66,11 @@ api.interceptors.response.use(
 
     // Handle unauthorized
     if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
-        // Optionally redirect to login
-        // localStorage.removeItem('token');
-        // window.location.href = '/login';
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        console.log('🔓 Unauthorized - clearing token and redirecting to login');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
       }
     }
 

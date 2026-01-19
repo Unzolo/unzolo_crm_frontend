@@ -95,6 +95,13 @@ class OfflineQueueManager {
       return;
     }
 
+    // Check for auth token before processing
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      console.log('🔑 No auth token found - skipping pending sync');
+      return;
+    }
+
     this.syncInProgress = true;
 
     try {

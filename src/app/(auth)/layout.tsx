@@ -20,9 +20,7 @@ export default function AuthLayout({
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center py-8">
-                <div className="hidden lg:block mb-4">
-                    <OnlineStatusBadge />
-                </div>
+                
                 <div className="relative w-36 h-36 mb-2">
                     <Image
                         src="/logo-text.png"

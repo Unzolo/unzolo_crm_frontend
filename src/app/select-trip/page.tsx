@@ -219,11 +219,11 @@ function SelectTripPage() {
                             ) : camps.length > 0 ? (
                                 camps.map((trip: any) => (
                                     <TripCard
-                                        key={trip.id}
+                                        key={trip._id || trip.id}
                                         trip={trip}
-                                        onEdit={() => router.push(`/edit-trip/${trip.id}`)}
-                                        onDelete={() => deleteTripMutation.mutate(trip.id)}
-                                        onClick={() => router.push(`/manage-bookings/${trip.id}`)}
+                                        onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
+                                        onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
+                                        onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
                                     />
                                 ))
                             ) : (

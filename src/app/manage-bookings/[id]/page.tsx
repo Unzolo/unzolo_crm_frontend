@@ -38,6 +38,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PwaInstallBanner } from "@/components/pwa-install-prompt";
 
 function ManageBookingPage() {
     const router = useRouter();
@@ -104,10 +105,11 @@ function ManageBookingPage() {
         },
     ];
 
-    const filters = ["All", "Advance Paid", "Partially Paid", "Fully Paid", "Cancelled"];
+    const filters = ["All", "Advance Paid", "Partially Paid", "Fully Paid", "Partially Cancelled", "Cancelled"];
 
     const getStatusColor = (status: string, paidAmount: number, totalAmount: number, advanceAmount: number) => {
         if (status?.toLowerCase() === "cancelled") return "bg-red-50 text-red-500";
+        if (status?.toLowerCase() === "partial_cancelled") return "bg-orange-50 text-orange-600";
         if (paidAmount >= totalAmount && totalAmount > 0) return "bg-green-50 text-[#219653]";
         if (paidAmount > advanceAmount && paidAmount < totalAmount) return "bg-blue-50 text-blue-600";
         if (paidAmount > 0) return "bg-orange-50 text-orange-400";
@@ -116,6 +118,7 @@ function ManageBookingPage() {
 
     const getStatusLabel = (status: string, paidAmount: number, totalAmount: number, advanceAmount: number) => {
         if (status?.toLowerCase() === "cancelled") return "Cancelled";
+        if (status?.toLowerCase() === "partial_cancelled") return "Partially Cancelled";
         if (paidAmount >= totalAmount && totalAmount > 0) return "Fully Paid";
         if (paidAmount > advanceAmount && paidAmount < totalAmount) return "Partially Paid";
         if (paidAmount > 0) return "Advance Paid";
@@ -133,10 +136,10 @@ function ManageBookingPage() {
 
             let matchesFilter = true;
 
-            const paidAmount = parseFloat(booking.paidAmount);
-            const totalAmount = parseFloat(booking.totalCost || booking.amount);
-            const memberCount = booking.memberCount || booking.Customers?.length || 0;
-            const advanceAmount = parseFloat(trip?.advanceAmount || "0") * memberCount;
+            const paidAmount = parseFloat(booking.netPaidAmount || booking.paidAmount || "0");
+            const totalAmount = parseFloat(booking.totalCost || booking.amount || "0");
+            const memberCount = booking.Customers?.filter((c: any) => c.status !== 'cancelled').length || booking.memberCount || 0;
+            const advanceAmount = parseFloat(trip?.advanceAmount || "0") * (booking.Customers?.length || 0);
             const statusLabel = getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount);
 
             if (activeFilter !== "All") {
@@ -362,24 +365,48 @@ function ManageBookingPage() {
                 <div className="space-y-2 pb-12">
                     {filteredAndSortedBookings.length > 0 ? (
                         filteredAndSortedBookings.map((booking: any) => {
+                            const isCancelled = booking.status?.toLowerCase() === 'cancelled';
+                            const isPartialCancelled = booking.status?.toLowerCase() === 'partial_cancelled';
+
                             const primaryCustomer = booking.Customers?.find((c: any) => c.isPrimary) || booking.Customers?.[0];
-                            const paidAmount = parseFloat(booking.paidAmount);
-                            const totalAmount = parseFloat(booking.totalCost);
-                            const memberCount = booking.memberCount || booking.Customers?.length || 0;
-                            const advanceAmount = parseFloat(trip?.advanceAmount || "0") * memberCount;
+                            const paidAmount = parseFloat(booking.netPaidAmount || booking.paidAmount || "0");
+                            const totalAmount = parseFloat(booking.totalCost || booking.amount || "0");
+                            const activeMemberCount = booking.Customers?.filter((c: any) => c.status !== 'cancelled').length || booking.memberCount || 0;
+                            const totalMemberCount = booking.Customers?.length || booking.memberCount || 0;
+                            const advanceAmount = parseFloat(trip?.advanceAmount || "0") * totalMemberCount;
+
+                            const calculatedRefund = booking.Payments?.filter((p: any) => p.paymentType === 'refund').reduce((acc: number, curr: any) => acc + parseFloat(curr.amount || 0), 0) || 0;
+
+                            // Fallback calculation for list view if aggregated field is missing
+                            const initialTotal = (parseFloat(booking.Trip?.price || trip?.price || "0") * totalMemberCount);
+                            const impliedRefund = isPartialCancelled && initialTotal > paidAmount ? initialTotal - paidAmount : 0;
+
+                            const refundAmount = booking.refundAmount || calculatedRefund || impliedRefund;
 
                             return (
                                 <Card
-                                    key={booking.id}
-                                    onClick={() => router.push(`/booking-details/${booking.id}`)}
-                                    className="p-3 pt-5 rounded-2xl border-[1px] border-[#219653]/10 ring-1 ring-gray-50 shadow-sm relative group overflow-hidden cursor-pointer active:scale-[0.99] transition-all hover:border-[#219653]/30"
+                                    key={booking._id || booking.id}
+                                    onClick={() => router.push(`/booking-details/${booking._id || booking.id}`)}
+                                    className={cn(
+                                        "p-3 pt-5 rounded-2xl border-[1px] ring-1 ring-gray-50 shadow-sm relative group overflow-hidden cursor-pointer active:scale-[0.99] transition-all hover:border-[#219653]/30",
+                                        isPartialCancelled ? "bg-orange-50/30 border-orange-100" :
+                                            isCancelled ? "bg-red-50/30 border-red-100" : "bg-white border-[#219653]/10"
+                                    )}
                                 >
                                     <span className="absolute top-1.5 right-3 text-[9px] text-gray-400 font-medium flex items-center gap-1">
                                         <Clock className="w-2.5 h-2.5" /> {format(new Date(booking.bookingDate), "dd MMM, yyyy h:mm a")}
                                     </span>
                                     <div className="flex items-start gap-3 mt-1">
-                                        <div className="w-10 h-10 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
-                                            <Package className="w-5 h-5 text-[#219653]" />
+                                        <div className={cn(
+                                            "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                                            isPartialCancelled ? "bg-orange-100" :
+                                                isCancelled ? "bg-red-100" : "bg-[#E2F1E8]"
+                                        )}>
+                                            <Package className={cn(
+                                                "w-5 h-5",
+                                                isPartialCancelled ? "text-orange-600" :
+                                                    isCancelled ? "text-red-600" : "text-[#219653]"
+                                            )} />
                                         </div>
                                         <div className="flex-1">
                                             <h3 className="text-sm font-bold text-black mb-0.5">
@@ -387,12 +414,18 @@ function ManageBookingPage() {
                                             </h3>
                                             <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400 font-medium mb-1">
                                                 <span className="flex items-center gap-1">
-                                                    <Users className="w-3 h-3" /> {booking.memberCount} members
+                                                    <Users className="w-3 h-3" /> {activeMemberCount} members
                                                 </span>
-                                                <span className="flex items-center gap-1 text-[12px]">
-                                                    <span className="text-gray-400">₹{paidAmount.toLocaleString()}</span>/
-                                                    <span className="text-[#219653]">₹{totalAmount.toLocaleString()}</span>
-                                                </span>
+                                                {!isPartialCancelled && !isCancelled ? (
+                                                    <span className="flex items-center gap-1 text-[12px]">
+                                                        <span className="text-gray-400">₹{paidAmount.toLocaleString()}</span>/
+                                                        <span className="text-[#219653]">₹{totalAmount.toLocaleString()}</span>
+                                                    </span>
+                                                ) : isPartialCancelled ? (
+                                                    <span className="text-orange-600 font-bold bg-white px-2 py-0.5 rounded-md border border-orange-100">
+                                                        Refund: ₹{refundAmount.toLocaleString()}
+                                                    </span>
+                                                ) : null}
                                                 <Badge className={`border-none shadow-none text-[8px] px-2 py-0.5 rounded-md font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount)}`}>
                                                     {getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount)}
                                                 </Badge>
@@ -419,6 +452,7 @@ function ManageBookingPage() {
                     )}
                 </div>
             </div>
+            <PwaInstallBanner />
         </div >
     );
 }

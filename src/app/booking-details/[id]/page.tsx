@@ -54,7 +54,7 @@ function BookingDetailsPage() {
     const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [paymentType, setPaymentType] = useState<"balance" | "custom">("balance");
+    const [paymentType, setPaymentType] = useState<"advance" | "balance" | "custom">("advance");
     const [customAmount, setCustomAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("gpay");
 
@@ -86,6 +86,7 @@ function BookingDetailsPage() {
         setSelectedFile(null);
     };
 
+    const initialTotal = (parseFloat(booking?.Trip?.price || "0") * (booking?.Customers?.length || 0));
     const advanceAmount = (parseFloat(booking?.Trip?.advanceAmount || "0") * (booking?.Customers?.length || 0));
 
     const addPaymentMutation = useMutation({
@@ -97,6 +98,8 @@ function BookingDetailsPage() {
 
             if (paymentType === "balance") {
                 finalAmount = remaining;
+            } else if (paymentType === "advance") {
+                finalAmount = advanceAmount;
             } else {
                 finalAmount = parseFloat(customAmount);
             }
@@ -191,9 +194,6 @@ function BookingDetailsPage() {
                             </div>
                         </div>
                         <div className="text-right">
-                            <span className="text-[10px] text-gray-400 font-bold block mb-1 font-sans">
-                                B.ID : #{booking.id.slice(0, 8).toUpperCase()}
-                            </span>
                             <Badge className="bg-[#E2F1E8] text-[#219653] border-none shadow-none rounded-md px-3 font-bold capitalize">
                                 {booking.status}
                             </Badge>
@@ -208,21 +208,31 @@ function BookingDetailsPage() {
                         </div>
                         <div className="space-y-2">
                             {booking.Customers?.map((p: any, i: number) => (
-                                <Card key={p.id || i} className="p-4 border-none bg-gray-50/50 rounded-2xl flex flex-row justify-between shadow-none">
+                                <Card key={p.id || i} className={cn(
+                                    "p-4 border-none rounded-2xl flex flex-row justify-between shadow-none relative overflow-hidden",
+                                    p.status === 'cancelled' ? "bg-red-50/50 opacity-80" : "bg-gray-50/50"
+                                )}>
                                     <div className="flex flex-row gap-3">
                                         <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                                            <Users className="w-6 h-6 text-[#219653]" />
+                                            <Users className={cn("w-6 h-6", p.status === 'cancelled' ? "text-red-400" : "text-[#219653]")} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-black">{p.name}</p>
+                                            <p className={cn("text-sm font-bold", p.status === 'cancelled' ? "text-red-900" : "text-black")}>{p.name}</p>
                                             <p className="text-[12px] text-gray-400 font-medium">
                                                 {p.age} yrs • {p.gender === 'male' ? "♂" : p.gender === 'female' ? "♀" : ""} {p.gender}
                                             </p>
                                         </div>
                                     </div>
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase">
-                                        {p.isPrimary ? "Primary" : "Member"}
-                                    </span>
+                                    <div className="flex flex-col items-end gap-1">
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase">
+                                            {p.isPrimary ? "Primary" : "Member"}
+                                        </span>
+                                        {p.status === 'cancelled' && (
+                                            <Badge variant="destructive" className="text-[8px] px-2 py-0 h-4 bg-red-100 text-red-600 border-none shadow-none uppercase font-bold">
+                                                Cancelled
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </Card>
                             ))}
                         </div>
@@ -237,17 +247,34 @@ function BookingDetailsPage() {
                         <Card className="p-4 border-none bg-gray-50/50 rounded-[20px] shadow-none">
                             <div className="grid grid-cols-2 gap-y-3">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs text-gray-400 font-medium">Total Amount</p>
-                                    <p className="text-lg font-bold text-[#219653]">₹{booking.totalCost}</p>
+                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Original Total</p>
+                                    <p className="text-lg font-bold text-gray-400 line-through">₹{initialTotal}</p>
                                 </div>
                                 <div className="space-y-0.5 text-right">
-                                    <p className="text-xs text-gray-400 font-medium">Remaining</p>
-                                    <p className="text-lg font-bold text-red-500">₹{booking.remainingAmount}</p>
+                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Revised Total</p>
+                                    <p className="text-lg font-bold text-[#219653]">₹{booking.totalCost}</p>
                                 </div>
                                 <div className="space-y-0.5">
-                                    <p className="text-xs text-gray-400 font-medium">Paid So Far</p>
+                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Total Paid Initially</p>
                                     <p className="text-lg font-bold text-black">₹{booking.paidAmount}</p>
                                 </div>
+                                {(booking.refundAmount && parseFloat(booking.refundAmount) > 0) && (
+                                    <div className="space-y-0.5 text-right">
+                                        <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Refunded Amount</p>
+                                        <p className="text-lg font-bold text-orange-500">₹{booking.refundAmount}</p>
+                                    </div>
+                                )}
+                                <div className="col-span-2 my-1 h-px bg-gray-200/50" />
+                                <div className="space-y-0.5">
+                                    <p className="text-xs text-gray-400 uppercase tracking-tight font-bold">Remaining balance</p>
+                                    <p className="text-lg font-bold text-red-500">₹{Math.max(0, booking.remainingAmount || 0)}</p>
+                                </div>
+                                {booking.netPaidAmount !== undefined && (
+                                    <div className="space-y-0.5 text-right">
+                                        <p className="text-xs text-gray-500 uppercase tracking-tight font-bold">Net Collected</p>
+                                        <p className="text-lg font-extrabold text-[#219653]">₹{booking.netPaidAmount}</p>
+                                    </div>
+                                )}
                             </div>
                         </Card>
                     </div>
@@ -269,9 +296,10 @@ function BookingDetailsPage() {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-black leading-tight">
-                                                    {payment.paymentType === 'full' ? 'Full Payment' :
-                                                        payment.paymentType === 'advance' ? 'Advance Payment' :
-                                                            payment.paymentType === 'balance' ? 'Balance Payment' : 'Custom Payment'}
+                                                    {payment.paymentType === 'refund' ? 'Refund' :
+                                                        payment.paymentType === 'full' ? 'Full Payment' :
+                                                            payment.paymentType === 'advance' ? 'Advance Payment' :
+                                                                payment.paymentType === 'balance' ? 'Balance Payment' : 'Custom Payment'}
                                                 </p>
                                                 <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
                                                     <Calendar className="w-3 h-3" /> {format(new Date(payment.paymentDate), "do MMM, yyyy p")}
@@ -279,7 +307,12 @@ function BookingDetailsPage() {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm font-extrabold text-[#219653]">₹{payment.amount}</p>
+                                            <p className={cn(
+                                                "text-sm font-extrabold",
+                                                payment.paymentType === 'refund' ? "text-red-500" : "text-[#219653]"
+                                            )}>
+                                                {payment.paymentType === 'refund' ? `-₹${payment.amount}` : `₹${payment.amount}`}
+                                            </p>
                                             {payment.method && <p className="text-[9px] text-gray-400 font-bold uppercase">{payment.method}</p>}
                                         </div>
                                     </div>
@@ -308,27 +341,29 @@ function BookingDetailsPage() {
             <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-50 flex gap-4">
                 <Button
                     onClick={() => setIsUpdatePaymentOpen(true)}
-                    disabled={booking.remainingAmount <= 0}
+                    disabled={booking.remainingAmount <= 0 || booking.status?.toLowerCase() === 'cancelled'}
                     className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-5 rounded-full text-white font-bold disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                     Update Payment
                 </Button>
                 <Button
                     variant="outline"
+                    disabled={booking.status?.toLowerCase() === 'cancelled'}
                     onClick={() => {
                         const bookingData = {
                             _id: booking._id || booking.id,
                             trip: booking.Trip,
                             customers: booking.Customers,
-                            amount: booking.totalCost,
-                            paidAmount: booking.paidAmount
+                            totalAmount: booking.totalCost,
+                            paidAmount: booking.paidAmount,
+                            refundAmount: booking.refundAmount
                         };
                         const encoded = encodeURIComponent(JSON.stringify(bookingData));
                         router.push(`/cancel-booking?data=${encoded}`);
                     }}
-                    className="flex-1 py-5 rounded-full border-2 border-[#219653] text-[#219653] font-bold hover:bg-[#F5F9F7]"
+                    className="flex-1 py-5 rounded-full border-2 border-[#219653] text-[#219653] font-bold hover:bg-[#F5F9F7] disabled:border-gray-300 disabled:text-gray-300 disabled:bg-white disabled:cursor-not-allowed"
                 >
-                    Cancel Booking
+                    {booking.status?.toLowerCase() === 'cancelled' ? 'Booking Cancelled' : 'Cancel Booking'}
                 </Button>
             </div>
 
@@ -346,6 +381,29 @@ function BookingDetailsPage() {
                         </div>
 
                         <div className="space-y-4 mb-8">
+                            {/* Advance Payment */}
+                            <Card
+                                onClick={() => setPaymentType("advance")}
+                                className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between ${paymentType === "advance" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30 shadow-none border-none"}`}
+                            >
+                                <div className="flex flex-row gap-4">
+                                    <div className="relative pl-4">
+                                        <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
+                                            <Landmark className="w-6 h-6 text-white" />
+                                        </div>
+                                        {paymentType === "advance" && (
+                                            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
+                                                <Check className="w-3 h-3 text-[#219653]" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="text-base font-bold text-black">Advance Payment</p>
+                                        <p className="text-xs text-gray-400 font-medium">Pay advance amount</p>
+                                    </div>
+                                </div>
+                                <span className="text-lg font-bold text-[#219653]">₹{advanceAmount}</span>
+                            </Card>
                             {/* Full Payment */}
                             <Card
                                 onClick={() => setPaymentType("balance")}

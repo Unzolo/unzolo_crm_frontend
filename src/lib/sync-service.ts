@@ -63,6 +63,14 @@ class SyncService {
       return;
     }
 
+    // Check for auth token before syncing
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      console.log('🔑 No auth token found - skipping sync');
+      this.isSyncing = false;
+      return;
+    }
+
     this.isSyncing = true;
     console.log('🔄 Starting full sync...');
 

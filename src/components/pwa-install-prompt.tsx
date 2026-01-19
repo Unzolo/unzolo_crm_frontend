@@ -1,13 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Share, X, PlusSquare } from 'lucide-react';
+import { Share, X, PlusSquare, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer";
 
 export function PwaInstallBanner() {
-    const [showBanner, setShowBanner] = useState(false);
-    const [isIOS, setIsIOS] = useState(false);
+    const [showFAB, setShowFAB] = useState(false);
+    const [showDrawer, setShowDrawer] = useState(false);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [isAndroid, setIsAndroid] = useState(false);
 
     useEffect(() => {
         // Detect if the app is already installed
@@ -17,86 +25,115 @@ export function PwaInstallBanner() {
 
         if (isStandalone) return;
 
-        // Detect iOS
+        // Detect platform
         const userAgent = window.navigator.userAgent.toLowerCase();
-        const ios = /iphone|ipad|ipod/.test(userAgent);
-        setIsIOS(ios);
+        const android = /android/.test(userAgent);
+        setIsAndroid(android);
 
-        // More aggressive check for iOS Safari
-        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        // Listen for the beforeinstallprompt event (Android/Chrome)
+        const handleBeforeInstallPrompt = (e: Event) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setShowFAB(true);
+        };
 
-        // Show banner only on iOS Safari if not installed
-        if (ios && isSafari) {
-            // Wait a few seconds to not annoy the user immediately
-            const timer = setTimeout(() => {
-                // Check local storage to see if user dismissed it
-                const dismissed = localStorage.getItem('pwa-install-dismissed');
-                if (!dismissed) {
-                    setShowBanner(true);
-                }
-            }, 3000);
-            return () => clearTimeout(timer);
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        // For non-Android (iOS/Desktop), we show the FAB if it's not installed
+        if (!android) {
+            // Check if it's iOS Safari or Desktop
+            const isIOS = /iphone|ipad|ipod/.test(userAgent);
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+            if (isIOS || !android) {
+                setShowFAB(true);
+            }
         }
+
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     }, []);
 
-    const dismissBanner = () => {
-        setShowBanner(false);
-        localStorage.setItem('pwa-install-dismissed', 'true');
+    const handleFABClick = async () => {
+        if (isAndroid && deferredPrompt) {
+            // For Android, use the native prompt
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            setDeferredPrompt(null);
+            if (outcome === 'accepted') {
+                setShowFAB(false);
+            }
+        } else {
+            // For iOS/Other, show our custom drawer
+            setShowDrawer(true);
+        }
     };
 
-    if (!showBanner) return null;
+    if (!showFAB) return null;
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 animate-in slide-in-from-bottom duration-500">
-            <div className="bg-white rounded-[24px] shadow-[0_-8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-5 relative overflow-hidden">
-                {/* Close Button */}
-                <button
-                    onClick={dismissBanner}
-                    className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition-colors"
+        <>
+            {/* Install FAB */}
+            <div className="fixed bottom-6 right-6 z-50 animate-in zoom-in-50 duration-300">
+                <Button
+                    onClick={handleFABClick}
+                    className="w-14 h-14 rounded-full bg-[#219653] hover:bg-[#1A7B44] text-white shadow-2xl flex items-center justify-center p-0 active:scale-95 transition-all group"
                 >
-                    <X className="w-5 h-5 text-gray-400" />
-                </button>
-
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-[#E2F1E8] flex items-center justify-center shrink-0 shadow-inner">
-                            <img src="/favicon.png" alt="App Icon" className="w-10 h-10 object-contain" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-base font-bold text-black leading-tight">Install Unzolo CRM</h3>
-                            <p className="text-xs text-gray-500 font-medium mt-1">Add to home screen for a premium experience and offline access.</p>
-                        </div>
-                    </div>
-
-                    <div className="bg-[#F8FBF9] rounded-xl p-4 space-y-3">
-                        <p className="text-xs font-bold text-[#219653] uppercase tracking-wider text-center">Follow these steps:</p>
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 border border-gray-100 shadow-sm">
-                                    <Share className="w-4 h-4 text-[#219653]" />
-                                </div>
-                                <p className="text-sm font-medium text-gray-700">Tap the <span className="font-bold text-black">'Share'</span> button in Safari</p>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 border border-gray-100 shadow-sm">
-                                    <PlusSquare className="w-4 h-4 text-[#219653]" />
-                                </div>
-                                <p className="text-sm font-medium text-gray-700">Scroll down and select <span className="font-bold text-black">'Add to Home Screen'</span></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Button
-                        onClick={dismissBanner}
-                        className="w-full bg-[#219653] hover:bg-[#1A7B44] text-white rounded-xl py-6 font-bold"
-                    >
-                        Got it!
-                    </Button>
-                </div>
-
-                {/* Decorative element */}
-                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-[#E2F1E8]/30 rounded-full blur-2xl" />
+                    <Download className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                    </span>
+                </Button>
             </div>
-        </div>
+
+            {/* iOS/Generic Install Instructions Drawer */}
+            <Drawer open={showDrawer} onOpenChange={setShowDrawer}>
+                <DrawerContent className="bg-white rounded-t-[32px] p-0 border-none shadow-2xl">
+                    <div className="mx-auto w-12 h-1.5 rounded-full bg-gray-200 mt-3 mb-2" />
+                    <div className="px-6 py-6 relative overflow-hidden">
+                        <div className="flex flex-col gap-6">
+                            <div className="flex items-center gap-5">
+                                <div className="w-16 h-16 rounded-2xl bg-[#E2F1E8] flex items-center justify-center shrink-0 shadow-inner ring-1 ring-[#219653]/10">
+                                    <img src="/favicon.png" alt="App Icon" className="w-12 h-12 object-contain" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-black leading-tight">Install Unzolo CRM</h3>
+                                    <p className="text-sm text-gray-500 font-medium mt-1">Get the app on your home screen for the best experience.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-[#F8FBF9] rounded-[24px] p-5 space-y-4 ring-1 ring-[#219653]/5">
+                                <p className="text-xs font-bold text-[#219653] uppercase tracking-widest text-center">Follow these steps:</p>
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-gray-100 shadow-sm">
+                                            <Share className="w-5 h-5 text-[#219653]" />
+                                        </div>
+                                        <p className="text-[15px] font-medium text-gray-700">Tap the <span className="font-bold text-black">'Share'</span> button in your browser</p>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 border border-gray-100 shadow-sm">
+                                            <PlusSquare className="w-5 h-5 text-[#219653]" />
+                                        </div>
+                                        <p className="text-[15px] font-medium text-gray-700">Scroll down and select <span className="font-bold text-black">'Add to Home Screen'</span></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Button
+                                onClick={() => setShowDrawer(false)}
+                                className="w-full bg-[#219653] hover:bg-[#1A7B44] text-white rounded-2xl py-7 text-base font-bold shadow-lg shadow-[#219653]/20 active:scale-[0.98] transition-all"
+                            >
+                                Got it!
+                            </Button>
+                        </div>
+
+                        {/* Decorative element */}
+                        <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-[#219653]/5 rounded-full blur-3xl" />
+                    </div>
+                </DrawerContent>
+            </Drawer>
+        </>
     );
 }

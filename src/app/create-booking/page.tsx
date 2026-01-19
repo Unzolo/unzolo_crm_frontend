@@ -88,7 +88,7 @@ function CreateBookingPage() {
         resolver: zodResolver(createBookingSchema) as any,
         defaultValues: {
             tripId: tripId || "",
-            paymentType: "full",
+            paymentType: "advance",
             paymentMethod: "gpay",
             paymentDate: new Date(),
             members: [{ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: true }],

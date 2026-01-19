@@ -34,6 +34,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PwaInstallBanner } from "@/components/pwa-install-prompt";
 
 function DashboardPage() {
   const router = useRouter();
@@ -198,6 +199,7 @@ function DashboardPage() {
           </div>
         </div>
       </div>
+      <PwaInstallBanner />
     </div>
   );
 }
