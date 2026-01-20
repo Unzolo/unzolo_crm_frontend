@@ -162,43 +162,9 @@ function BookingDetailsPage() {
         },
     });
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
-                <div className="p-4 flex items-center justify-between">
-                    <Skeleton className="w-10 h-10 rounded-full" />
-                    <Skeleton className="h-6 w-32 rounded-md" />
-                    <div className="w-10" />
-                </div>
-                <div className="flex-1 bg-white rounded-t-[40px] p-6 shadow-2xl space-y-8">
-                    <div className="max-w-3xl mx-auto space-y-6">
-                        <div className="flex justify-between items-start">
-                            <div className="space-y-2">
-                                <Skeleton className="h-7 w-48 rounded-md" />
-                                <Skeleton className="h-4 w-32 rounded-md" />
-                            </div>
-                            <Skeleton className="h-8 w-24 rounded-lg" />
-                        </div>
 
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-40 rounded-md ml-2" />
-                            <div className="space-y-3">
-                                <Skeleton className="h-20 w-full rounded-2xl" />
-                                <Skeleton className="h-20 w-full rounded-2xl" />
-                            </div>
-                        </div>
 
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-40 rounded-md ml-2" />
-                            <Skeleton className="h-32 w-full rounded-3xl" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (!booking) {
+    if (!isLoading && !booking) {
         return (
             <div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center">
                 <p className="text-gray-500">Booking not found</p>
@@ -227,26 +193,38 @@ function BookingDetailsPage() {
                 <div className="space-y-6 max-w-3xl mx-auto">
                     {/* Header Info */}
                     <div className="flex justify-between items-start mt-2">
-                        <div>
-                            <h3 className=" text-black flex items-center gap-2 font-semibold">
-                                {booking.Trip?.title || "Trip Title"}
-                            </h3>
+                        <div className="flex-1">
+                            {isLoading ? (
+                                <Skeleton className="h-7 w-3/4 mb-2" />
+                            ) : (
+                                <h3 className=" text-black flex items-center gap-2 font-semibold">
+                                    {booking.Trip?.title || "Trip Title"}
+                                </h3>
+                            )}
                             <div className="flex items-center gap-2 text-xs text-gray-400 font-medium mt-1">
                                 <Calendar className="w-4 h-4" />
-                                {booking.Trip?.type === 'package' ? (
-                                    booking.preferredDate ? `Preferred: ${format(new Date(booking.preferredDate), "do MMM, yyyy")}` : "Flexible Dates"
+                                {isLoading ? (
+                                    <Skeleton className="h-4 w-32" />
                                 ) : (
-                                    <>
-                                        {booking.Trip?.startDate && format(new Date(booking.Trip.startDate), "do MMM")}
-                                        {booking.Trip?.endDate && ` - ${format(new Date(booking.Trip.endDate), "do MMM")}`}
-                                    </>
+                                    booking.Trip?.type === 'package' ? (
+                                        booking.preferredDate ? `Preferred: ${format(new Date(booking.preferredDate), "do MMM, yyyy")}` : "Flexible Dates"
+                                    ) : (
+                                        <>
+                                            {booking.Trip?.startDate && format(new Date(booking.Trip.startDate), "do MMM")}
+                                            {booking.Trip?.endDate && ` - ${format(new Date(booking.Trip.endDate), "do MMM")}`}
+                                        </>
+                                    )
                                 )}
                             </div>
                         </div>
                         <div className="text-right">
-                            <Badge className="bg-[#E2F1E8] text-[#219653] border-none shadow-none rounded-md px-3 font-bold capitalize">
-                                {booking.status}
-                            </Badge>
+                            {isLoading ? (
+                                <Skeleton className="h-8 w-20 rounded-md" />
+                            ) : (
+                                <Badge className="bg-[#E2F1E8] text-[#219653] border-none shadow-none rounded-md px-3 font-bold capitalize">
+                                    {booking.status}
+                                </Badge>
+                            )}
                         </div>
                     </div>
 
@@ -360,52 +338,61 @@ function BookingDetailsPage() {
                             <h4 className="text-lg font-semibold text-black">Payment Timeline</h4>
                         </div>
                         <div className="space-y-6 pl-4 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-[2px] before:bg-gray-100">
-                            {booking.Payments?.sort((a: any, b: any) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())
-                                .map((payment: any, i: number) => (
-                                    <div key={payment.id || i} className="flex items-center justify-between relative">
+                            {isLoading ? (
+                                <div className="space-y-6">
+                                    <Skeleton className="h-12 w-full rounded-xl" />
+                                    <Skeleton className="h-12 w-full rounded-xl" />
+                                </div>
+                            ) : (
+                                <>
+                                    {booking.Payments?.sort((a: any, b: any) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())
+                                        .map((payment: any, i: number) => (
+                                            <div key={payment.id || i} className="flex items-center justify-between relative">
+                                                <div className="absolute left-[-17px] w-4 h-4 rounded-full bg-[#B9DBC8]" />
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-9 h-9 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
+                                                        <IndianRupee className="w-4 h-4 text-[#219653]" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-black leading-tight">
+                                                            {payment.paymentType === 'refund' ? 'Refund' :
+                                                                payment.paymentType === 'full' ? 'Full Payment' :
+                                                                    payment.paymentType === 'advance' ? 'Advance Payment' :
+                                                                        payment.paymentType === 'balance' ? 'Balance Payment' : 'Custom Payment'}
+                                                        </p>
+                                                        <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
+                                                            <Calendar className="w-3 h-3" /> {format(new Date(payment.paymentDate), "do MMM, yyyy p")}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className={cn(
+                                                        "text-sm font-extrabold",
+                                                        payment.paymentType === 'refund' ? "text-red-500" : "text-[#219653]"
+                                                    )}>
+                                                        {payment.paymentType === 'refund' ? `-₹${payment.amount}` : `₹${payment.amount}`}
+                                                    </p>
+                                                    {payment.method && <p className="text-[9px] text-gray-400 font-bold uppercase">{payment.method}</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                    <div className="flex items-center justify-between relative">
                                         <div className="absolute left-[-17px] w-4 h-4 rounded-full bg-[#B9DBC8]" />
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
-                                                <IndianRupee className="w-4 h-4 text-[#219653]" />
+                                                <Package className="w-4 h-4 text-[#219653]" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-black leading-tight">
-                                                    {payment.paymentType === 'refund' ? 'Refund' :
-                                                        payment.paymentType === 'full' ? 'Full Payment' :
-                                                            payment.paymentType === 'advance' ? 'Advance Payment' :
-                                                                payment.paymentType === 'balance' ? 'Balance Payment' : 'Custom Payment'}
-                                                </p>
+                                                <p className="text-sm font-bold text-black leading-tight">Booking Created</p>
                                                 <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
-                                                    <Calendar className="w-3 h-3" /> {format(new Date(payment.paymentDate), "do MMM, yyyy p")}
+                                                    <Calendar className="w-3 h-3" /> {format(new Date(booking.createdAt), "do MMM, yyyy p")}
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className={cn(
-                                                "text-sm font-extrabold",
-                                                payment.paymentType === 'refund' ? "text-red-500" : "text-[#219653]"
-                                            )}>
-                                                {payment.paymentType === 'refund' ? `-₹${payment.amount}` : `₹${payment.amount}`}
-                                            </p>
-                                            {payment.method && <p className="text-[9px] text-gray-400 font-bold uppercase">{payment.method}</p>}
-                                        </div>
                                     </div>
-                                ))}
-
-                            <div className="flex items-center justify-between relative">
-                                <div className="absolute left-[-17px] w-4 h-4 rounded-full bg-[#B9DBC8]" />
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
-                                        <Package className="w-4 h-4 text-[#219653]" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-black leading-tight">Booking Created</p>
-                                        <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1 mt-0.5">
-                                            <Calendar className="w-3 h-3" /> {format(new Date(booking.createdAt), "do MMM, yyyy p")}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

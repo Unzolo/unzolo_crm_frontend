@@ -7,7 +7,13 @@ import { Loader2 } from "lucide-react";
 export function withAuth<P extends object>(Component: React.ComponentType<P>) {
     return function ProtectedRoute(props: P) {
         const router = useRouter();
-        const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+        const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+            if (typeof window !== "undefined") {
+                const token = localStorage.getItem("token");
+                return !!token;
+            }
+            return null;
+        });
 
         useEffect(() => {
             const token = localStorage.getItem("token");
@@ -20,15 +26,7 @@ export function withAuth<P extends object>(Component: React.ComponentType<P>) {
             }
         }, [router]);
 
-        if (isAuthenticated === null) {
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-[#E2F1E8]">
-                    <Loader2 className="w-8 h-8 text-[#219653] animate-spin" />
-                </div>
-            );
-        }
-
-        if (!isAuthenticated) {
+        if (isAuthenticated === null || !isAuthenticated) {
             return null;
         }
 

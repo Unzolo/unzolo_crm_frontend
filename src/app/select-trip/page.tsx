@@ -45,7 +45,7 @@ function SelectTripPage() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<"date" | "price" | "title">("date");
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
     const queryClient = useQueryClient();
 
     const { data: tripsResponse, isLoading: tripsLoading } = useQuery({

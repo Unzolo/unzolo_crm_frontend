@@ -137,8 +137,6 @@ function CreateBookingPage() {
     const trip = tripResponse?.data;
     const paymentType = watch("paymentType");
     const members = watch("members");
-    const customAmount = watch("amount");
-
     const memberCountValue = watch("memberCount");
 
     useEffect(() => {
@@ -194,12 +192,10 @@ function CreateBookingPage() {
             formData.append("paymentMethod", data.paymentMethod);
             formData.append("paymentDate", data.paymentDate.toISOString());
 
-            // Handle Type Specific Data
             if (trip?.type === 'package') {
                 if (data.memberCount) formData.append("memberCount", data.memberCount.toString());
                 if (data.preferredDate) formData.append("preferredDate", data.preferredDate.toISOString());
             } else {
-                // For camps, member count is the number of participants
                 formData.append("memberCount", data.members.length.toString());
             }
 
@@ -227,8 +223,6 @@ function CreateBookingPage() {
         },
         onError: (error: any) => {
             if (error.isOffline) {
-                // For offline booking, we still want to redirect to manage bookings
-                // so the user can see their temporary booking
                 router.push(`/manage-bookings/${tripId}`);
                 return;
             }
@@ -239,38 +233,6 @@ function CreateBookingPage() {
     const onSubmit: SubmitHandler<CreateBookingValues> = (values) => {
         createBookingMutation.mutate(values);
     };
-
-    if (tripLoading) {
-        return (
-            <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
-                <div className="p-4 flex items-center justify-between">
-                    <Skeleton className="w-10 h-10 rounded-full" />
-                    <Skeleton className="h-6 w-32 rounded-md" />
-                    <div className="w-10" />
-                </div>
-                <div className="flex-1 bg-white rounded-t-[40px] p-6 shadow-2xl space-y-6">
-                    <div className="max-w-3xl mx-auto space-y-8 mt-4">
-                        <div className="space-y-4">
-                            <Skeleton className="h-20 w-full rounded-2xl" />
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-6 w-32 rounded-md" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Skeleton className="h-14 w-full rounded-xl" />
-                                <Skeleton className="h-14 w-full rounded-xl" />
-                            </div>
-                        </div>
-                        <div className="space-y-4 pt-4 border-t border-gray-50">
-                            <Skeleton className="h-6 w-40 rounded-md" />
-                            <Skeleton className="h-12 w-full rounded-xl" />
-                            <Skeleton className="h-32 w-full rounded-2xl" />
-                        </div>
-                        <Skeleton className="h-14 w-full rounded-full" />
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
@@ -289,439 +251,473 @@ function CreateBookingPage() {
 
             {/* Main Content */}
             <div className="flex-1 bg-white rounded-t-[30px] p-3 shadow-2xl overflow-y-auto">
-                <div className="2xl:max-w-3xl 2xl:mx-auto">
-                    <div className="flex items-center gap-2 mb-6">
-                        <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
-                        <h2 className="text-lg font-bold text-black ">Participants</h2>
-                    </div>
-
-                    {/* Participants Count Card - Only for Camps */}
-                    {trip?.type !== 'package' && (
-                        <Card className="p-4 border-none shadow-none bg-[#219653]/5 rounded-2xl flex flex-row justify-between mb-8">
-                            <div className="flex items-center gap-4 ">
-                                <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                                    <Users className="w-6 h-6 text-[#219653]" />
-                                </div>
-                                <span className="text-sm font-medium text-gray-700">Participants Count</span>
-                            </div>
+                {tripLoading ? (
+                    <div className="2xl:max-w-3xl 2xl:mx-auto space-y-8 mt-4 p-3">
+                        <div className="space-y-4">
+                            <Skeleton className="h-20 w-full rounded-2xl" />
                             <div className="flex items-center gap-2">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
-                                    onClick={() => {
-                                        if (fields.length > 1) remove(fields.length - 1);
-                                    }}
-                                    disabled={fields.length <= 1}
-                                >
-                                    <Minus className="w-4 h-4" />
-                                </Button>
-                                <span className=" font-bold text-black min-w-[20px] text-center">{fields.length}</span>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
-                                    onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </Button>
+                                <Skeleton className="h-6 w-32 rounded-md" />
                             </div>
-                        </Card>
-                    )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Skeleton className="h-14 w-full rounded-xl" />
+                                <Skeleton className="h-14 w-full rounded-xl" />
+                            </div>
+                        </div>
+                        <div className="space-y-4 pt-4 border-t border-gray-50">
+                            <Skeleton className="h-6 w-40 rounded-md" />
+                            <Skeleton className="h-12 w-full rounded-xl" />
+                            <Skeleton className="h-32 w-full rounded-2xl" />
+                        </div>
+                        <Skeleton className="h-14 w-full rounded-full" />
+                    </div>
+                ) : (
+                    <div className="2xl:max-w-3xl 2xl:mx-auto">
+                        <div className="flex items-center gap-2 mb-6">
+                            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                            <h2 className="text-lg font-bold text-black ">Participants</h2>
+                        </div>
 
-                    <form id="booking-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-32">
-                        {/* Package Specific Fields */}
-                        {trip?.type === 'package' && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-black ml-1">Preferred Date</label>
-                                    <Controller
-                                        control={control}
-                                        name="preferredDate"
-                                        render={({ field }) => (
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" className={cn("w-full h-12 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]", !field.value && "text-muted-foreground")}>
-                                                        <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
-                                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="rounded-xl border-[#E2F1E8]" />
-                                                </PopoverContent>
-                                            </Popover>
-                                        )}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-black ml-1">Total Members</label>
-                                    <div className="relative">
-                                        <Input {...register("memberCount")} type="number" placeholder="Count" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
-                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        {/* Participants Count Card - Only for Camps */}
+                        {trip?.type !== 'package' && (
+                            <Card className="p-4 border-none shadow-none bg-[#219653]/5 rounded-2xl flex flex-row justify-between mb-8">
+                                <div className="flex items-center gap-4 ">
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                                        <Users className="w-6 h-6 text-[#219653]" />
                                     </div>
+                                    <span className="text-sm font-medium text-gray-700">Participants Count</span>
                                 </div>
-                            </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
+                                        onClick={() => {
+                                            if (fields.length > 1) remove(fields.length - 1);
+                                        }}
+                                        disabled={fields.length <= 1}
+                                    >
+                                        <Minus className="w-4 h-4" />
+                                    </Button>
+                                    <span className=" font-bold text-black min-w-[20px] text-center">{fields.length}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
+                                        onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </Card>
                         )}
 
-                        {(trip?.type === 'package' ? fields.slice(0, 1) : fields).map((field, index) => (
-                            <Card key={field.id} className="p-3 border-none bg-[#219653]/5 rounded-[24px] space-y-0 relative">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className={cn(
-                                            "w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold",
-                                            index === 0 ? "bg-[#219653]" : "bg-gray-400"
-                                        )}>
-                                            {index + 1}
-                                        </div>
-                                        <h3 className={cn("text-sm font-bold", index === 0 ? "text-[#219653]" : "text-gray-500")}>
-                                            {index === 0 ? "Primary Contact" : `Participant ${index + 1}`}
-                                        </h3>
-                                    </div>
-                                    {index > 0 && trip?.type !== 'package' && (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
-                                            onClick={() => remove(index)}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-12 gap-x-4 gap-y-4 pt-0">
-                                    <div className="col-span-9 space-y-1.5">
-                                        <label className="text-xs font-bold text-black ml-1">Full Name</label>
-                                        <Input
-                                            {...register(`members.${index}.name`)}
-                                            placeholder="Enter Name"
-                                            className={cn(
-                                                "h-12 placeholder:text-sm mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
-                                                errors.members?.[index]?.name && "border-red-500 focus-visible:ring-red-500"
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="col-span-3 space-y-1.5">
-                                        <label className="text-xs font-bold text-black ml-1">Gender</label>
+                        <form id="booking-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-32">
+                            {/* Package Specific Fields */}
+                            {trip?.type === 'package' && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-black ml-1">Preferred Date</label>
                                         <Controller
                                             control={control}
-                                            name={`members.${index}.gender`}
+                                            name="preferredDate"
                                             render={({ field }) => (
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <SelectTrigger className="h-12 mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]">
-                                                        <SelectValue placeholder="Select" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="male">Male</SelectItem>
-                                                        <SelectItem value="female">Female</SelectItem>
-                                                        <SelectItem value="other">Other</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" className={cn("w-full h-12 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]", !field.value && "text-muted-foreground")}>
+                                                            <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
+                                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="rounded-xl border-[#E2F1E8]" />
+                                                    </PopoverContent>
+                                                </Popover>
                                             )}
                                         />
                                     </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-bold text-black ml-1">Total Members</label>
+                                        <div className="relative">
+                                            <Input {...register("memberCount")} type="number" placeholder="Count" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
+                                            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-                                    {index === 0 && (
+                            {(trip?.type === 'package' ? fields.slice(0, 1) : fields).map((field, index) => (
+                                <Card key={field.id} className="p-3 border-none bg-[#219653]/5 rounded-[24px] space-y-0 relative">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className={cn(
+                                                "w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold",
+                                                index === 0 ? "bg-[#219653]" : "bg-gray-400"
+                                            )}>
+                                                {index + 1}
+                                            </div>
+                                            <h3 className={cn("text-sm font-bold", index === 0 ? "text-[#219653]" : "text-gray-500")}>
+                                                {index === 0 ? "Primary Contact" : `Participant ${index + 1}`}
+                                            </h3>
+                                        </div>
+                                        {index > 0 && trip?.type !== 'package' && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
+                                                onClick={() => remove(index)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-12 gap-x-4 gap-y-4 pt-0">
                                         <div className="col-span-9 space-y-1.5">
-                                            <label className="text-xs font-bold text-black ml-1">Contact Number</label>
+                                            <label className="text-xs font-bold text-black ml-1">Full Name</label>
                                             <Input
-                                                {...register(`members.${index}.contactNumber`)}
-                                                placeholder="Phone number"
-                                                type="number"
+                                                {...register(`members.${index}.name`)}
+                                                placeholder="Enter Name"
                                                 className={cn(
-                                                    "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
-                                                    errors.members?.[index]?.contactNumber && "border-red-500"
+                                                    "h-12 placeholder:text-sm mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
+                                                    errors.members?.[index]?.name && "border-red-500 focus-visible:ring-red-500"
                                                 )}
                                             />
                                         </div>
-                                    )}
-
-                                    <div className={cn(index === 0 ? "col-span-3" : "col-span-3", "space-y-1.5")}>
-                                        <label className="text-xs font-bold text-black ml-1">Age</label>
-                                        <Input
-                                            {...register(`members.${index}.age`)}
-                                            type="number"
-                                            placeholder="eg: 20"
-                                            className={cn(
-                                                "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
-                                                errors.members?.[index]?.age && "border-red-500"
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
-
-                        {trip?.type !== 'package' && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full h-16 rounded-2xl border-2 border-dashed border-[#219653] text-[#219653] font-bold text-lg hover:bg-[#F5F9F7] bg-white gap-2"
-                                onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
-                            >
-                                <Plus className="w-6 h-6" /> Add Participant
-                            </Button>
-                        )}
-                    </form>
-                </div>
-
-            </div>
-
-            {/* Bottom Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex justify-center z-40 2xl:max-w-3xl 2xl:mx-auto 2xl:pl-[250px]">
-                <Button
-                    onClick={async () => {
-                        const isValid = await trigger("members");
-                        if (isValid) {
-                            setShowPayment(true);
-                        }
-                    }}
-                    className="w-full max-w-md bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg transition-all active:scale-95"
-                >
-                    Next
-                </Button>
-            </div>
-
-            {/* Payment Details Drawer */}
-            <Drawer open={showPayment} onOpenChange={setShowPayment} direction={isDesktop ? "right" : "bottom"}>
-                <DrawerContent className={cn(
-                    "bg-white px-0 outline-none border-none",
-                    isDesktop ? "h-full w-[600px] p-4" : "rounded-t-[40px] max-h-[96vh]"
-                )}>
-                    <div className="overflow-y-auto px-6 pb-32">
-                        <DrawerHeader className="p-0 mb-6 text-center">
-                            <DrawerTitle className="text-lg font-bold text-black my-1">Payment Details</DrawerTitle>
-                        </DrawerHeader>
-
-                        <div className="mb-6">
-                            <h3 className=" text-black font-bold">{trip?.title || "Loading..."}</h3>
-                            <p className="text-xs text-gray-400 font-medium">Participants : {fields.length} Adults</p>
-                        </div>
-
-                        <div className="space-y-4 mb-8">
-                            {/* Full Payment */}
-                            <Card
-                                onClick={() => setValue("paymentType", "full")}
-                                className={cn(
-                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between",
-                                    paymentType === "full" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
-                                )}
-                            >
-                                <div className="flex flex-row gap-4">
-                                    <div className="relative pl-4">
-                                        <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
-                                            <Landmark className="w-6 h-6 text-white" />
+                                        <div className="col-span-3 space-y-1.5">
+                                            <label className="text-xs font-bold text-black ml-1">Gender</label>
+                                            <Controller
+                                                control={control}
+                                                name={`members.${index}.gender`}
+                                                render={({ field }) => (
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <SelectTrigger className="h-12 mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]">
+                                                            <SelectValue placeholder="Select" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="male">Male</SelectItem>
+                                                            <SelectItem value="female">Female</SelectItem>
+                                                            <SelectItem value="other">Other</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </div>
-                                        {paymentType === "full" && (
-                                            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
-                                                <Check className="w-3 h-3 text-[#219653]" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-base font-bold text-black">Full Payment</p>
-                                        <p className="text-xs text-gray-400 font-medium">Pay complete amount now</p>
-                                    </div>
-                                </div>
-                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (parseFloat(trip.price) * fields.length).toLocaleString() : "..."}</span>
-                            </Card>
 
-                            {/* Advance Payment */}
-                            <Card
-                                onClick={() => setValue("paymentType", "advance")}
-                                className={cn(
-                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between",
-                                    paymentType === "advance" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
-                                )}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="relative pl-4">
-                                        <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
-                                            <Landmark className="w-6 h-6 text-white" />
-                                        </div>
-                                        {paymentType === "advance" && (
-                                            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
-                                                <Check className="w-3 h-3 text-[#219653]" />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="text-base font-bold text-black">Advance Payment</p>
-                                        <p className="text-xs text-gray-400 font-medium max-w-[150px]">Pay advance and balance later</p>
-                                    </div>
-                                </div>
-                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (parseFloat(trip.advanceAmount) * fields.length).toLocaleString() : "..."}</span>
-                            </Card>
-
-                            {/* Custom Amount */}
-                            <Card
-                                onClick={() => setValue("paymentType", "custom")}
-                                className={cn(
-                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-3",
-                                    paymentType === "custom" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
-                                )}
-                            >
-                                <div className="flex flex-row justify-between items-center w-full">
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative pl-4">
-                                            <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
-                                                <Landmark className="w-6 h-6 text-white" />
-                                            </div>
-                                            {paymentType === "custom" && (
-                                                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
-                                                    <Check className="w-3 h-3 text-[#219653]" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-base font-bold text-black">Custom Amount</p>
-                                        </div>
-                                    </div>
-                                    {paymentType !== "custom" && <span className="text-lg font-bold text-[#219653]">₹...</span>}
-                                </div>
-
-                                {paymentType === "custom" && (
-                                    <div className="flex items-center gap-2 pl-4">
-                                        <Input
-                                            {...register("amount")}
-                                            placeholder="Enter Amount"
-                                            type="number"
-                                            className="h-10 bg-white border-[#E2F1E8] rounded-xl text-sm focus-visible:ring-[#219653]"
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
-                                    </div>
-                                )}
-                            </Card>
-                        </div>
-
-                        {/* Payment Details Form */}
-                        <div className="space-y-4">
-                            {/* Payment Date */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-black ml-1">Payment Date</label>
-                                <Controller
-                                    control={control}
-                                    name="paymentDate"
-                                    render={({ field }) => (
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant={"outline"}
+                                        {index === 0 && (
+                                            <div className="col-span-9 space-y-1.5">
+                                                <label className="text-xs font-bold text-black ml-1">Contact Number</label>
+                                                <Input
+                                                    {...register(`members.${index}.contactNumber`)}
+                                                    placeholder="Phone number"
+                                                    type="number"
                                                     className={cn(
-                                                        "w-full h-14 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653] relative px-4",
-                                                        !field.value && "text-muted-foreground"
+                                                        "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
+                                                        errors.members?.[index]?.contactNumber && "border-red-500"
                                                     )}
-                                                >
-                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                    <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#219653]" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0 border-[#E2F1E8] rounded-2xl" align="start">
-                                                <CalendarComponent
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    initialFocus
-                                                    className="rounded-2xl border-none"
                                                 />
-                                            </PopoverContent>
-                                        </Popover>
-                                    )}
-                                />
-                            </div>
+                                            </div>
+                                        )}
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-black ml-1">Payment Method</label>
-                                <Controller
-                                    control={control}
-                                    name="paymentMethod"
-                                    render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <SelectTrigger className="h-14 py-2 bg-gray-50/50 border-[#E2F1E8] rounded-xl mt-1 focus:ring-[#219653] w-full">
-                                                <SelectValue placeholder="Select Method" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="gpay">GPay</SelectItem>
-                                                <SelectItem value="phonepe">PhonePe</SelectItem>
-                                                <SelectItem value="upi">UPI</SelectItem>
-                                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                                                <SelectItem value="cash">Cash</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-black ml-1">Screenshot (optional)</label>
-                                {!imagePreview ? (
-                                    <>
-                                        <input
-                                            type="file"
-                                            ref={fileInputRef}
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                        />
-                                        <div
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="border-2 border-dashed border-[#E2F1E8] rounded-2xl p-8 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                                        >
-                                            <ImageIcon className="w-10 h-10 text-[#219653] mb-2" />
-                                            <p className="text-sm text-gray-400 font-medium text-center">Upload Transaction Screenshot</p>
+                                        <div className={cn(index === 0 ? "col-span-3" : "col-span-3", "space-y-1.5")}>
+                                            <label className="text-xs font-bold text-black ml-1">Age</label>
+                                            <Input
+                                                {...register(`members.${index}.age`)}
+                                                type="number"
+                                                placeholder="eg: 20"
+                                                className={cn(
+                                                    "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
+                                                    errors.members?.[index]?.age && "border-red-500"
+                                                )}
+                                            />
                                         </div>
-                                    </>
-                                ) : (
-                                    <div className="relative rounded-2xl overflow-hidden border border-[#E2F1E8] bg-gray-50 min-h-[150px] flex items-center justify-center">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Screenshot preview"
-                                            className="max-w-full max-h-64 object-contain"
-                                        />
-                                        <Button
-                                            type="button"
-                                            onClick={removeImage}
-                                            variant="secondary"
-                                            size="icon"
-                                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                                </Card>
+                            ))}
 
-                    {/* Footer Button */}
-                    <div className="lg:left-64 p-6 bg-white border-t border-gray-100 z-50 2xl:max-w-3xl 2xl:mx-auto">
-                        <Button
-                            form="booking-form"
-                            type="submit"
-                            disabled={createBookingMutation.isPending}
-                            className="w-full bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg shadow-lg"
-                        >
-                            {createBookingMutation.isPending ? (
-                                <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    Creating Booking...
-                                </>
-                            ) : (
-                                "Confirm Booking"
+                            {trip?.type !== 'package' && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full h-16 rounded-2xl border-2 border-dashed border-[#219653] text-[#219653] font-bold text-lg hover:bg-[#F5F9F7] bg-white gap-2"
+                                    onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
+                                >
+                                    <Plus className="w-6 h-6" /> Add Participant
+                                </Button>
                             )}
-                        </Button>
-                    </div>
 
-                </DrawerContent>
-            </Drawer>
+                            {/* Payment Details Trigger */}
+                            <div className="p-4 flex justify-center">
+                                <Button
+                                    type="button"
+                                    onClick={async () => {
+                                        const isValid = await trigger("members");
+                                        if (isValid) {
+                                            setShowPayment(true);
+                                        }
+                                    }}
+                                    className="w-full max-w-md bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg transition-all active:scale-95"
+                                >
+                                    Next
+                                </Button>
+                            </div>
+
+                            {/* Payment Details Drawer */}
+                            <Drawer open={showPayment} onOpenChange={setShowPayment} direction={isDesktop ? "right" : "bottom"}>
+                                <DrawerContent className={cn(
+                                    "bg-white px-0 outline-none border-none",
+                                    isDesktop ? "h-full w-[600px] p-4" : "rounded-t-[40px] max-h-[96vh]"
+                                )}>
+                                    <div className="overflow-y-auto px-6 pb-32">
+                                        <DrawerHeader className="p-0 mb-6 text-center">
+                                            <DrawerTitle className="text-lg font-bold text-black my-1">Payment Details</DrawerTitle>
+                                        </DrawerHeader>
+
+                                        <div className="mb-6">
+                                            <h3 className=" text-black font-bold">{trip?.title || "Loading..."}</h3>
+                                            <p className="text-xs text-gray-400 font-medium">Participants : {fields.length} Adults</p>
+                                        </div>
+
+                                        <div className="space-y-4 mb-8">
+                                            {/* Full Payment */}
+                                            <Card
+                                                onClick={() => setValue("paymentType", "full")}
+                                                className={cn(
+                                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between",
+                                                    paymentType === "full" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
+                                                )}
+                                            >
+                                                <div className="flex flex-row gap-4">
+                                                    <div className="relative pl-4">
+                                                        <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
+                                                            <Landmark className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        {paymentType === "full" && (
+                                                            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
+                                                                <Check className="w-3 h-3 text-[#219653]" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-base font-bold text-black">Full Payment</p>
+                                                        <p className="text-xs text-gray-400 font-medium">Pay complete amount now</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (parseFloat(trip.price) * (trip.type === 'package' ? (memberCountValue || 1) : fields.length)).toLocaleString() : "..."}</span>
+                                            </Card>
+
+                                            {/* Advance Payment */}
+                                            <Card
+                                                onClick={() => setValue("paymentType", "advance")}
+                                                className={cn(
+                                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between",
+                                                    paymentType === "advance" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="relative pl-4">
+                                                        <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
+                                                            <Landmark className="w-6 h-6 text-white" />
+                                                        </div>
+                                                        {paymentType === "advance" && (
+                                                            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
+                                                                <Check className="w-3 h-3 text-[#219653]" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-base font-bold text-black">Advance Payment</p>
+                                                        <p className="text-xs text-gray-400 font-medium max-w-[150px]">Pay advance and balance later</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (parseFloat(trip.advanceAmount) * (trip.type === 'package' ? (memberCountValue || 1) : fields.length)).toLocaleString() : "..."}</span>
+                                            </Card>
+
+                                            {/* Custom Amount */}
+                                            <Card
+                                                onClick={() => setValue("paymentType", "custom")}
+                                                className={cn(
+                                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-3",
+                                                    paymentType === "custom" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
+                                                )}
+                                            >
+                                                <div className="flex flex-row justify-between items-center w-full">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="relative pl-4">
+                                                            <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
+                                                                <Landmark className="w-6 h-6 text-white" />
+                                                            </div>
+                                                            {paymentType === "custom" && (
+                                                                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
+                                                                    <Check className="w-3 h-3 text-[#219653]" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-base font-bold text-black">Custom Amount</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {paymentType === "custom" && (
+                                                    <div className="flex items-center gap-2 pl-4">
+                                                        <Input
+                                                            {...register("amount")}
+                                                            placeholder="Enter Amount"
+                                                            type="number"
+                                                            className="h-10 bg-white border-[#E2F1E8] rounded-xl text-sm focus-visible:ring-[#219653]"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </Card>
+                                        </div>
+
+                                        {/* Payment Details Form */}
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-black ml-1">Payment Date</label>
+                                                <Controller
+                                                    control={control}
+                                                    name="paymentDate"
+                                                    render={({ field }) => (
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button
+                                                                    variant={"outline"}
+                                                                    className={cn(
+                                                                        "w-full h-14 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653] relative px-4",
+                                                                        !field.value && "text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                                    <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#219653]" />
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0 border-[#E2F1E8] rounded-2xl" align="start">
+                                                                <CalendarComponent
+                                                                    mode="single"
+                                                                    selected={field.value}
+                                                                    onSelect={field.onChange}
+                                                                    initialFocus
+                                                                    className="rounded-2xl border-none"
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    )}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-black ml-1">Payment Method</label>
+                                                <Controller
+                                                    control={control}
+                                                    name="paymentMethod"
+                                                    render={({ field }) => (
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <SelectTrigger className="h-14 py-2 bg-gray-50/50 border-[#E2F1E8] rounded-xl mt-1 focus:ring-[#219653] w-full">
+                                                                <SelectValue placeholder="Select Method" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="gpay">GPay</SelectItem>
+                                                                <SelectItem value="phonepe">PhonePe</SelectItem>
+                                                                <SelectItem value="upi">UPI</SelectItem>
+                                                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                                                <SelectItem value="cash">Cash</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-bold text-black ml-1">Screenshot (optional)</label>
+                                                {!imagePreview ? (
+                                                    <div
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        className="border-2 border-dashed border-[#E2F1E8] rounded-2xl p-8 bg-white flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        <ImageIcon className="w-10 h-10 text-[#219653] mb-2" />
+                                                        <p className="text-sm text-gray-400 font-medium text-center">Upload Transaction Screenshot</p>
+                                                        <input
+                                                            type="file"
+                                                            ref={fileInputRef}
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                            onChange={handleImageUpload}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="relative rounded-2xl overflow-hidden border border-[#E2F1E8] bg-gray-50 min-h-[150px] flex items-center justify-center">
+                                                        <img
+                                                            src={imagePreview}
+                                                            alt="Screenshot preview"
+                                                            className="max-w-full max-h-64 object-contain"
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            onClick={removeImage}
+                                                            variant="secondary"
+                                                            size="icon"
+                                                            className="absolute top-2 right-2 h-8 w-8 rounded-full bg-black/50 text-white hover:bg-black/70 backdrop-blur-sm"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Footer Button inside Drawer */}
+                                        <div className="mt-8">
+                                            <Button
+                                                form="booking-form"
+                                                type="submit"
+                                                disabled={createBookingMutation.isPending}
+                                                className="w-full bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg shadow-lg"
+                                            >
+                                                {createBookingMutation.isPending ? (
+                                                    <>
+                                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                                        Creating Booking...
+                                                    </>
+                                                ) : (
+                                                    "Confirm Booking"
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </DrawerContent>
+                            </Drawer>
+                        </form>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
 
 function CreateBookingPageContainer() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center"><Loader2 className="w-10 h-10 text-[#219653] animate-spin" /></div>}>
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
+                <div className="p-4 flex items-center justify-between">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <Skeleton className="h-6 w-32 rounded-md" />
+                    <div className="w-10" />
+                </div>
+                <div className="flex-1 bg-white rounded-t-[40px] p-6 shadow-2xl space-y-6">
+                    <div className="max-w-3xl mx-auto space-y-8 mt-4">
+                        <div className="space-y-4">
+                            <Skeleton className="h-20 w-full rounded-2xl" />
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="h-6 w-32 rounded-md" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }>
             <CreateBookingPage />
         </Suspense>
     );
