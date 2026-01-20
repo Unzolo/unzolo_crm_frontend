@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -404,7 +405,32 @@ function CancelBookingPage() {
 
 function CancelBookingPageContainer() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center">Loading...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
+                <div className="p-4 flex items-center justify-between">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <Skeleton className="h-6 w-40 rounded-md" />
+                    <div className="w-10" />
+                </div>
+                <div className="flex-1 bg-white rounded-t-[40px] p-6 shadow-2xl space-y-6">
+                    <div className="max-w-3xl mx-auto space-y-6 mt-4">
+                        <div className="space-y-4">
+                            <Skeleton className="h-8 w-48 rounded-md" />
+                            <Skeleton className="h-4 w-32 rounded-md" />
+                        </div>
+                        <div className="space-y-3">
+                            <Skeleton className="h-20 w-full rounded-2xl" />
+                            <Skeleton className="h-20 w-full rounded-2xl" />
+                            <Skeleton className="h-20 w-full rounded-2xl" />
+                        </div>
+                        <div className="space-y-4 pt-6">
+                            <Skeleton className="h-6 w-40 rounded-md" />
+                            <Skeleton className="h-32 w-full rounded-[24px]" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }>
             <CancelBookingPage />
         </Suspense>
     );

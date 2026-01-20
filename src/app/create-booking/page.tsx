@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
     Select,
@@ -241,8 +242,32 @@ function CreateBookingPage() {
 
     if (tripLoading) {
         return (
-            <div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center">
-                <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
+            <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
+                <div className="p-4 flex items-center justify-between">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <Skeleton className="h-6 w-32 rounded-md" />
+                    <div className="w-10" />
+                </div>
+                <div className="flex-1 bg-white rounded-t-[40px] p-6 shadow-2xl space-y-6">
+                    <div className="max-w-3xl mx-auto space-y-8 mt-4">
+                        <div className="space-y-4">
+                            <Skeleton className="h-20 w-full rounded-2xl" />
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="h-6 w-32 rounded-md" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Skeleton className="h-14 w-full rounded-xl" />
+                                <Skeleton className="h-14 w-full rounded-xl" />
+                            </div>
+                        </div>
+                        <div className="space-y-4 pt-4 border-t border-gray-50">
+                            <Skeleton className="h-6 w-40 rounded-md" />
+                            <Skeleton className="h-12 w-full rounded-xl" />
+                            <Skeleton className="h-32 w-full rounded-2xl" />
+                        </div>
+                        <Skeleton className="h-14 w-full rounded-full" />
+                    </div>
+                </div>
             </div>
         );
     }

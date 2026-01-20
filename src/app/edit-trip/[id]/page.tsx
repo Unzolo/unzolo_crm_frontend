@@ -2,6 +2,7 @@
 
 import { ArrowLeft, IndianRupee, Calendar as CalendarIcon, Loader2, Tent, Package, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -172,8 +173,28 @@ function EditTripPage() {
 
     if (isFetching) {
         return (
-            <div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center">
-                <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
+            <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
+                <div className="p-4 flex items-center justify-between">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <Skeleton className="h-6 w-32 rounded-md" />
+                    <div className="w-10" />
+                </div>
+                <div className="flex-1 bg-white rounded-t-[30px] p-6 shadow-2xl space-y-6">
+                    <div className="max-w-3xl mx-auto space-y-6 mt-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full rounded-xl" />
+                            <Skeleton className="h-10 w-full rounded-xl" />
+                        </div>
+                        <div className="space-y-4">
+                            <Skeleton className="h-14 w-full rounded-xl" />
+                            <Skeleton className="h-14 w-full rounded-xl" />
+                            <Skeleton className="h-14 w-full rounded-xl" />
+                            <Skeleton className="h-14 w-full rounded-xl" />
+                            <Skeleton className="h-32 w-full rounded-xl" />
+                        </div>
+                        <Skeleton className="h-14 w-full rounded-full mt-8" />
+                    </div>
+                </div>
             </div>
         );
     }

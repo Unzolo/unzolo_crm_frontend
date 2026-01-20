@@ -12,8 +12,8 @@ import {
   Loader2,
   Pencil
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
@@ -35,12 +35,13 @@ import { apiWithOffline } from "@/lib/api";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PwaInstallBanner } from "@/components/pwa-install-prompt";
+import { Button } from "@/components/ui/button";
 
 function DashboardPage() {
   const router = useRouter();
   const [isBookingsOpen, setIsBookingsOpen] = useState(false);
 
-  const { data: statsResponse } = useQuery({
+  const { data: statsResponse, isLoading: statsLoading } = useQuery({
     queryKey: ["stats"],
     queryFn: async () => {
       const response = await apiWithOffline.get("/dashboard/stats");
@@ -165,17 +166,29 @@ function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-              {stats.map((stat, index) => (
-                <Card key={index} className="p-4 lg:p-6 border-none shadow-sm rounded-[16px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50 hover:shadow-md hover:ring-[#219653]/10 transition-all group">
-                  <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0 group-hover:bg-[#219653]/10 transition-colors">
-                    <div className="group-hover:scale-110 transition-transform">{stat.icon}</div>
-                  </div>
-                  <div className="flex flex-col justify-center">
-                    <span className="text-[10px] lg:text-xs text-gray-400 font-bold uppercase tracking-wider">{stat.label}</span>
-                    <span className="text-lg lg:text-2xl font-bold text-black tracking-tight">{stat.value}</span>
-                  </div>
-                </Card>
-              ))}
+              {statsLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <Card key={i} className="p-4 lg:p-6 border-none shadow-sm rounded-[16px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50">
+                    <Skeleton className="w-12 h-12 lg:w-16 lg:h-16 rounded-full shrink-0" />
+                    <div className="flex flex-col justify-center gap-2 flex-1">
+                      <Skeleton className="h-3 w-16" />
+                      <Skeleton className="h-6 w-20" />
+                    </div>
+                  </Card>
+                ))
+              ) : (
+                stats.map((stat, index) => (
+                  <Card key={index} className="p-4 lg:p-6 border-none shadow-sm rounded-[16px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50 hover:shadow-md hover:ring-[#219653]/10 transition-all group">
+                    <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0 group-hover:bg-[#219653]/10 transition-colors">
+                      <div className="group-hover:scale-110 transition-transform">{stat.icon}</div>
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      <span className="text-[10px] lg:text-xs text-gray-400 font-bold uppercase tracking-wider">{stat.label}</span>
+                      <span className="text-lg lg:text-2xl font-bold text-black tracking-tight">{stat.value}</span>
+                    </div>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
 

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -122,9 +123,23 @@ function ProfilePage() {
             <div className="flex-1 bg-white rounded-t-[40px] lg:rounded-none p-6 shadow-2xl lg:shadow-none overflow-y-auto pb-10">
                 <div className="max-w-3xl mx-auto">
                     {isProfileLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
-                            <p className="text-gray-400 font-medium">Loading profile...</p>
+                        <div className="space-y-8 mt-4">
+                            <div className="flex flex-col items-center">
+                                <Skeleton className="w-24 h-24 rounded-full mb-4" />
+                                <Skeleton className="h-6 w-32 rounded-md mb-2" />
+                                <Skeleton className="h-4 w-24 rounded-md" />
+                            </div>
+                            <div className="space-y-6">
+                                <div className="space-y-3">
+                                    <Skeleton className="h-4 w-32 rounded-md" />
+                                    <Skeleton className="h-20 w-full rounded-2xl" />
+                                    <Skeleton className="h-20 w-full rounded-2xl" />
+                                </div>
+                                <div className="space-y-3">
+                                    <Skeleton className="h-4 w-32 rounded-md" />
+                                    <Skeleton className="h-20 w-full rounded-2xl" />
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <>

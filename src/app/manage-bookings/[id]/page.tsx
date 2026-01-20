@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useRouter, useParams } from "next/navigation";
@@ -50,7 +51,7 @@ function ManageBookingPage() {
     const [sortBy, setSortBy] = useState<"date" | "amount" | "name">("date");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-    const { data: bookingsResponse, isLoading } = useQuery({
+    const { data: bookingsResponse, isLoading: bookingsLoading, isFetching: bookingsFetching } = useQuery({
         queryKey: ["bookings", tripId],
         queryFn: async () => {
             const response = await apiWithOffline.get(`/bookings?tripId=${tripId}`);
@@ -63,7 +64,7 @@ function ManageBookingPage() {
     const bookings = bookingsResponse?.data?.bookings || [];
 
     // Separate fetch for trip details to ensure header is correct even if no bookings
-    const { data: tripResponse } = useQuery({
+    const { data: tripResponse, isLoading: tripLoading } = useQuery({
         queryKey: ["trip", tripId],
         queryFn: async () => {
             const response = await apiWithOffline.get(`/trips/${tripId}`);
@@ -168,13 +169,7 @@ function ManageBookingPage() {
             return sortOrder === "desc" ? -comparison : comparison;
         });
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center">
-                <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
-            </div>
-        );
-    }
+
 
     return (
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
@@ -202,7 +197,7 @@ function ManageBookingPage() {
                 <div className="max-w-5xl mx-auto flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-black">Manage Bookings</h1>
-                        <p className="text-sm text-gray-500 mt-1">{trip?.title || "Loading..."}</p>
+                        {tripLoading ? <Skeleton className="h-4 w-48 mt-1" /> : <p className="text-sm text-gray-500 mt-1">{trip?.title}</p>}
                     </div>
                     <Button
                         onClick={() => router.push(`/create-booking?tripId=${tripId}`)}
@@ -225,12 +220,24 @@ function ManageBookingPage() {
                             <span>Overview</span>
                             {isStatsExpanded ? <ChevronUp className="w-5 h-5 text-[#219653]" /> : <ChevronDown className="w-5 h-5" />}
                         </button>
-                        <h2 className="text-lg font-semibold text-black mb-1 pr-16 truncate">{trip?.title || "Loading..."}</h2>
+                        {tripLoading ? (
+                            <Skeleton className="h-6 w-3/4 mb-1" />
+                        ) : (
+                            <h2 className="text-lg font-semibold text-black mb-1 pr-16 truncate">{trip?.title}</h2>
+                        )}
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
                             <MapPin className="w-4 h-4 text-gray-400" />
-                            <span className="text-xs text-gray-400 font-medium">{trip?.destination || "..."}</span>
+                            {tripLoading ? (
+                                <Skeleton className="h-3 w-24" />
+                            ) : (
+                                <span className="text-xs text-gray-400 font-medium">{trip?.destination}</span>
+                            )}
                             <span className="text-xs text-gray-300">|</span>
-                            <span className="text-xs text-gray-400 font-bold">{bookings.length} Bookings</span>
+                            {bookingsLoading ? (
+                                <Skeleton className="h-3 w-16" />
+                            ) : (
+                                <span className="text-xs text-gray-400 font-bold">{bookings.length} Bookings</span>
+                            )}
                             {trip?.type === 'package' && trip?.category && (
                                 <>
                                     <span className="text-xs text-gray-300">|</span>
@@ -403,99 +410,118 @@ function ManageBookingPage() {
                         </Popover>
                     </div>
 
-                    <p className="text-sm font-bold text-black mb-3 ml-1">
-                        {filteredAndSortedBookings.length} Bookings
-                    </p>
+                    <div className="flex items-center gap-2 mb-3 ml-1">
+                        {bookingsLoading ? (
+                            <Skeleton className="h-4 w-20" />
+                        ) : (
+                            <p className="text-sm font-bold text-black">
+                                {filteredAndSortedBookings.length} Bookings
+                            </p>
+                        )}
+                    </div>
 
                     {/* Bookings List */}
-                    <div className="space-y-2 pb-12 2xl:grid 2xl:grid-cols-3 gap-4">
-                        {filteredAndSortedBookings.length > 0 ? (
-                            filteredAndSortedBookings.map((booking: any) => {
-                                const isCancelled = booking.status?.toLowerCase() === 'cancelled';
-                                const isPartialCancelled = booking.status?.toLowerCase() === 'partial_cancelled';
+                    <div className="space-y-3 pb-8">
+                        {bookingsLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <Card key={i} className="p-4 rounded-2xl border-none bg-white shadow-sm ring-1 ring-gray-100 flex flex-row gap-4">
+                                    <Skeleton className="w-12 h-12 rounded-full shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="flex justify-between">
+                                            <Skeleton className="h-4 w-32 rounded-md" />
+                                            <Skeleton className="h-6 w-20 rounded-lg" />
+                                        </div>
+                                        <Skeleton className="h-3 w-48 rounded-md" />
+                                        <div className="flex justify-between pt-2">
+                                            <Skeleton className="h-4 w-24 rounded-md" />
+                                            <Skeleton className="h-4 w-16 rounded-md" />
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))
+                        ) : (
+                            filteredAndSortedBookings.length > 0 ? (
+                                filteredAndSortedBookings.map((booking: any) => {
+                                    const isCancelled = booking.status?.toLowerCase() === 'cancelled';
+                                    const isPartialCancelled = booking.status?.toLowerCase() === 'partial_cancelled';
 
-                                const primaryCustomer = booking.Customers?.find((c: any) => c.isPrimary) || booking.Customers?.[0];
-                                const paidAmount = parseFloat(booking.netPaidAmount || booking.paidAmount || "0");
-                                const totalAmount = parseFloat(booking.totalCost || booking.amount || "0");
-                                const activeMemberCount = booking.activeMemberCount ?? (booking.Customers?.filter((c: any) => c.status !== 'cancelled').length || 0);
-                                const totalMemberCount = booking.memberCount || booking.Customers?.length || 0;
-                                const advanceAmount = parseFloat(trip?.advanceAmount || "0") * totalMemberCount;
+                                    const primaryCustomer = booking.Customers?.find((c: any) => c.isPrimary) || booking.Customers?.[0];
+                                    const paidAmount = parseFloat(booking.netPaidAmount || booking.paidAmount || "0");
+                                    const totalAmount = parseFloat(booking.totalCost || booking.amount || "0");
+                                    const activeMemberCount = booking.activeMemberCount ?? (booking.Customers?.filter((c: any) => c.status !== 'cancelled').length || 0);
+                                    const totalMemberCount = booking.memberCount || booking.Customers?.length || 0;
+                                    const advanceAmount = parseFloat(trip?.advanceAmount || "0") * totalMemberCount;
 
-                                const calculatedRefund = booking.Payments?.filter((p: any) => p.paymentType === 'refund').reduce((acc: number, curr: any) => acc + parseFloat(curr.amount || 0), 0) || 0;
+                                    const calculatedRefund = booking.Payments?.filter((p: any) => p.paymentType === 'refund').reduce((acc: number, curr: any) => acc + parseFloat(curr.amount || 0), 0) || 0;
 
-                                // Fallback calculation for list view if aggregated field is missing
-                                const initialTotal = (parseFloat(booking.Trip?.price || trip?.price || "0") * totalMemberCount);
-                                const impliedRefund = isPartialCancelled && initialTotal > paidAmount ? initialTotal - paidAmount : 0;
+                                    // Fallback calculation for list view if aggregated field is missing
+                                    const initialTotal = (parseFloat(booking.Trip?.price || trip?.price || "0") * totalMemberCount);
+                                    const impliedRefund = isPartialCancelled && initialTotal > paidAmount ? initialTotal - paidAmount : 0;
 
-                                const refundAmount = booking.refundAmount || calculatedRefund || impliedRefund;
+                                    const refundAmount = booking.refundAmount || calculatedRefund || impliedRefund;
 
-                                return (
-                                    <Card
-                                        key={booking._id || booking.id}
-                                        onClick={() => router.push(`/booking-details/${booking._id || booking.id}`)}
-                                        className={cn(
-                                            "p-3 pt-5 2xl:h-24 rounded-2xl border-[1px] ring-1 ring-gray-50 shadow-sm relative group overflow-hidden cursor-pointer active:scale-[0.99] transition-all hover:border-[#219653]/30",
-                                            isPartialCancelled ? "bg-orange-50/30 border-orange-100" :
-                                                isCancelled ? "bg-red-50/30 border-red-100" : "bg-white border-[#219653]/10"
-                                        )}
-                                    >
-                                        <Badge className={`absolute top-0 left-0 border-none shadow-none text-[8px] px-2 py-1 rounded-none rounded-br-xl font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount)}`}>
-                                            {getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount)}
-                                        </Badge>
-                                        <span className="absolute top-1.5 right-3 text-[9px] text-gray-400 font-medium flex items-center gap-1">
-                                            <Clock className="w-2.5 h-2.5" /> {format(new Date(booking.bookingDate), "dd MMM, yyyy h:mm a")}
-                                        </span>
-                                        <div className="flex items-start gap-3 mt-3">
-                                            <div className={cn(
-                                                "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                                                isPartialCancelled ? "bg-orange-100" :
-                                                    isCancelled ? "bg-red-100" : "bg-[#E2F1E8]"
-                                            )}>
-                                                <Package className={cn(
-                                                    "w-5 h-5",
-                                                    isPartialCancelled ? "text-orange-600" :
-                                                        isCancelled ? "text-red-600" : "text-[#219653]"
-                                                )} />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="text-sm font-bold text-black mb-0.5">
-                                                    {primaryCustomer?.name || "No Name"} - {primaryCustomer?.contactNumber || "No Number"}
-                                                </h3>
-                                                <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400 font-medium mb-1">
-                                                    <span className="flex items-center gap-1">
-                                                        <Users className="w-3 h-3" /> {activeMemberCount} Adults
-                                                    </span>
-                                                    {trip?.type === 'package' && booking.preferredDate && (
-                                                        <span className="flex items-center gap-1 text-[#219653] font-bold">
-                                                            <Calendar className="w-3 h-3" /> {format(new Date(booking.preferredDate), "dd MMM")}
+                                    return (
+                                        <Card
+                                            key={booking._id || booking.id}
+                                            onClick={() => router.push(`/booking-details/${booking._id || booking.id}`)}
+                                            className={cn(
+                                                "p-3 pt-5 2xl:h-24 rounded-2xl border-[1px] ring-1 ring-gray-50 shadow-sm relative group overflow-hidden cursor-pointer active:scale-[0.99] transition-all hover:border-[#219653]/30",
+                                                isPartialCancelled ? "bg-orange-50/30 border-orange-100" :
+                                                    isCancelled ? "bg-red-50/30 border-red-100" : "bg-white border-[#219653]/10"
+                                            )}
+                                        >
+                                            <Badge className={`absolute top-0 left-0 border-none shadow-none text-[8px] px-2 py-1 rounded-none rounded-br-xl font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount)}`}>
+                                                {getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount)}
+                                            </Badge>
+                                            <span className="absolute top-1.5 right-3 text-[9px] text-gray-400 font-medium flex items-center gap-1">
+                                                <Clock className="w-2.5 h-2.5" /> {format(new Date(booking.bookingDate), "dd MMM, yyyy h:mm a")}
+                                            </span>
+                                            <div className="flex items-start gap-3 mt-3">
+                                                <div className={cn(
+                                                    "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                                                    isPartialCancelled ? "bg-orange-100" :
+                                                        isCancelled ? "bg-red-100" : "bg-[#E2F1E8]"
+                                                )}>
+                                                    <Package className={cn(
+                                                        "w-5 h-5",
+                                                        isPartialCancelled ? "text-orange-600" :
+                                                            isCancelled ? "text-red-600" : "text-[#219653]"
+                                                    )} />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="text-sm font-bold text-black mb-0.5">
+                                                        {primaryCustomer?.name || "No Name"} - {primaryCustomer?.contactNumber || "No Number"}
+                                                    </h3>
+                                                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400 font-medium mb-1">
+                                                        <span className="flex items-center gap-1">
+                                                            <Users className="w-3 h-3" /> {activeMemberCount} Adults
                                                         </span>
-                                                    )}
-                                                    {!isCancelled && !isPartialCancelled ? (
-                                                        <span className="flex items-center gap-1 text-[12px]">
-                                                            <span className="text-gray-400">₹{paidAmount.toLocaleString()}</span>/
-                                                            <span className="text-[#219653]">₹{totalAmount.toLocaleString()}</span>
-                                                        </span>
-                                                    ) : null}
+                                                        {trip?.type === 'package' && booking.preferredDate && (
+                                                            <span className="flex items-center gap-1 text-[#219653] font-bold">
+                                                                <Calendar className="w-3 h-3" /> {format(new Date(booking.preferredDate), "dd MMM")}
+                                                            </span>
+                                                        )}
+                                                        {!isCancelled && !isPartialCancelled ? (
+                                                            <span className="flex items-center gap-1 text-[12px]">
+                                                                <span className="text-gray-400">₹{paidAmount.toLocaleString()}</span>/
+                                                                <span className="text-[#219653]">₹{totalAmount.toLocaleString()}</span>
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </Card>
-                                );
-                            })
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-20 text-center">
-                                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                                    <ClipboardCheck className="w-10 h-10 text-gray-300" />
+                                        </Card>
+                                    );
+                                })
+                            ) : (
+                                <div className="text-center py-16 bg-white rounded-3xl ring-1 ring-gray-100/50">
+                                    <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
+                                        <ClipboardCheck className="w-8 h-8 text-gray-300" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-black">No Bookings Found</h3>
+                                    <p className="text-sm text-gray-400 font-medium px-4">There are no bookings matching your current filter.</p>
                                 </div>
-                                <h3 className="text-lg font-bold text-black mb-2">No Bookings Found</h3>
-                                <p className="text-sm text-gray-500 mb-8 max-w-[200px]">Start adding customers to this trip to manage bookings.</p>
-                                <Button
-                                    onClick={() => router.push(`/create-booking?tripId=${tripId}`)}
-                                    className="bg-[#219653] hover:bg-[#1A7B44] px-8 py-6 rounded-full text-white font-bold text-lg shadow-lg shadow-green-100"
-                                >
-                                    <Plus className="w-5 h-5 mr-2" /> Add Booking
-                                </Button>
-                            </div>
+                            )
                         )}
                     </div>
                 </div>

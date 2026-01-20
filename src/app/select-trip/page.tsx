@@ -24,6 +24,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
@@ -231,10 +232,22 @@ function SelectTripPage() {
                         <div className="flex-1 overflow-y-auto pb-4 pr-1 -mr-1">
                             <TabsContent value="camps" className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 outline-none m-0">
                                 {tripsLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-20 gap-3">
-                                        <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
-                                        <p className="text-gray-400 font-medium">Loading camps...</p>
-                                    </div>
+                                    Array.from({ length: 6 }).map((_, i) => (
+                                        <Card key={i} className="p-4 rounded-[20px] bg-white border-none shadow-sm ring-1 ring-gray-100 flex flex-col gap-3">
+                                            <div className="flex justify-between items-start">
+                                                <Skeleton className="w-10 h-10 rounded-xl" />
+                                                <Skeleton className="w-16 h-6 rounded-lg" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-5 w-3/4 rounded-md" />
+                                                <Skeleton className="h-4 w-1/2 rounded-md" />
+                                            </div>
+                                            <div className="pt-2 border-t border-gray-50 flex justify-between items-center">
+                                                <Skeleton className="h-6 w-24 rounded-md" />
+                                                <Skeleton className="h-8 w-8 rounded-full" />
+                                            </div>
+                                        </Card>
+                                    ))
                                 ) : camps.length > 0 ? (
                                     camps.map((trip: any) => (
                                         <TripCard
@@ -254,10 +267,22 @@ function SelectTripPage() {
 
                             <TabsContent value="packages" className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 outline-none m-0">
                                 {tripsLoading ? (
-                                    <div className="flex flex-col items-center justify-center py-20 gap-3">
-                                        <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
-                                        <p className="text-gray-400 font-medium">Loading packages...</p>
-                                    </div>
+                                    Array.from({ length: 6 }).map((_, i) => (
+                                        <Card key={i} className="p-4 rounded-[20px] bg-white border-none shadow-sm ring-1 ring-gray-100 flex flex-col gap-3">
+                                            <div className="flex justify-between items-start">
+                                                <Skeleton className="w-10 h-10 rounded-xl" />
+                                                <Skeleton className="w-16 h-6 rounded-lg" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-5 w-3/4 rounded-md" />
+                                                <Skeleton className="h-4 w-1/2 rounded-md" />
+                                            </div>
+                                            <div className="pt-2 border-t border-gray-50 flex justify-between items-center">
+                                                <Skeleton className="h-6 w-24 rounded-md" />
+                                                <Skeleton className="h-8 w-8 rounded-full" />
+                                            </div>
+                                        </Card>
+                                    ))
                                 ) : packages.length > 0 ? (
                                     packages.map((trip: any) => (
                                         <TripCard
