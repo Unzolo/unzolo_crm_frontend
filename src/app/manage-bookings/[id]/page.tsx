@@ -216,7 +216,7 @@ function ManageBookingPage() {
                     <Card className="p-4 rounded-2xl border-none ring-1 ring-gray-100 shadow-sm mb-4 bg-white relative gap-2">
                         <button
                             onClick={() => setIsStatsExpanded(!isStatsExpanded)}
-                            className="absolute right-4 top-4 p-1 px-2 flex flex-row items-center text-xs rounded-full bg-gray-50 text-gray-400 hover:text-[#219653] transition-colors"
+                            className="absolute right-4 top-4 p-1 px-2 flex flex-row items-center text-xs rounded-full bg-gray-[#219653]/10 text-[#219653] hover:text-[#219653] transition-colors"
                         >
                             <span>Overview</span>
                             {isStatsExpanded ? <ChevronUp className="w-5 h-5 text-[#219653]" /> : <ChevronDown className="w-5 h-5" />}
@@ -379,7 +379,7 @@ function ManageBookingPage() {
                     </p>
 
                     {/* Bookings List */}
-                    <div className="space-y-2 pb-12">
+                    <div className="space-y-2 pb-12 2xl:grid 2xl:grid-cols-3 gap-4">
                         {filteredAndSortedBookings.length > 0 ? (
                             filteredAndSortedBookings.map((booking: any) => {
                                 const isCancelled = booking.status?.toLowerCase() === 'cancelled';
@@ -405,7 +405,7 @@ function ManageBookingPage() {
                                         key={booking._id || booking.id}
                                         onClick={() => router.push(`/booking-details/${booking._id || booking.id}`)}
                                         className={cn(
-                                            "p-3 pt-5 rounded-2xl border-[1px] ring-1 ring-gray-50 shadow-sm relative group overflow-hidden cursor-pointer active:scale-[0.99] transition-all hover:border-[#219653]/30",
+                                            "p-3 pt-5 2xl:h-24 rounded-2xl border-[1px] ring-1 ring-gray-50 shadow-sm relative group overflow-hidden cursor-pointer active:scale-[0.99] transition-all hover:border-[#219653]/30",
                                             isPartialCancelled ? "bg-orange-50/30 border-orange-100" :
                                                 isCancelled ? "bg-red-50/30 border-red-100" : "bg-white border-[#219653]/10"
                                         )}

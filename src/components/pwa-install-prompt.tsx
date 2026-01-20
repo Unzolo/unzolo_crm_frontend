@@ -28,26 +28,26 @@ export function PwaInstallBanner() {
         // Detect platform
         const userAgent = window.navigator.userAgent.toLowerCase();
         const android = /android/.test(userAgent);
+        const ios = /iphone|ipad|ipod/.test(userAgent);
+        const mobile = android || ios;
+
         setIsAndroid(android);
 
         // Listen for the beforeinstallprompt event (Android/Chrome)
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            setShowFAB(true);
+            // Only show FAB if it's explicitly a mobile device
+            if (mobile) {
+                setShowFAB(true);
+            }
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-        // For non-Android (iOS/Desktop), we show the FAB if it's not installed
-        if (!android) {
-            // Check if it's iOS Safari or Desktop
-            const isIOS = /iphone|ipad|ipod/.test(userAgent);
-            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-            if (isIOS || !android) {
-                setShowFAB(true);
-            }
+        // For iOS devices where beforeinstallprompt doesn't fire
+        if (ios) {
+            setShowFAB(true);
         }
 
         return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);

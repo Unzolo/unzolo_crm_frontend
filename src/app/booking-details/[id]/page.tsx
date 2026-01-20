@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useRouter, useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { withAuth } from "@/components/auth/with-auth";
@@ -57,6 +57,16 @@ function BookingDetailsPage() {
     const [paymentType, setPaymentType] = useState<"advance" | "balance" | "custom">("balance");
     const [customAmount, setCustomAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("gpay");
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        const checkDesktop = () => {
+            setIsDesktop(window.innerWidth >= 1024);
+        };
+        checkDesktop();
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
 
     const { data: bookingResponse, isLoading } = useQuery({
         queryKey: ["booking", id],
@@ -72,6 +82,10 @@ function BookingDetailsPage() {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (!file.type.startsWith("image/")) {
+                toast.error("Please upload an image file");
+                return;
+            }
             setSelectedFile(file);
             const url = URL.createObjectURL(file);
             setImagePreview(url);
@@ -181,7 +195,7 @@ function BookingDetailsPage() {
 
             {/* Main Content */}
             <div className="flex-1 bg-white rounded-t-[40px] p-6 shadow-2xl overflow-y-auto pb-32">
-                <div className="space-y-6">
+                <div className="space-y-6 max-w-3xl mx-auto">
                     {/* Header Info */}
                     <div className="flex justify-between items-start mt-2">
                         <div>
@@ -348,7 +362,7 @@ function BookingDetailsPage() {
             </div>
 
             {/* Sticky Footer */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-50 flex gap-4">
+            <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-50 flex gap-4 max-w-3xl 2xl:max-w-4xl ml-[500px]">
                 <Button
                     onClick={() => setIsUpdatePaymentOpen(true)}
                     disabled={booking.remainingAmount <= 0 || booking.status?.toLowerCase() === 'cancelled'}
@@ -378,8 +392,11 @@ function BookingDetailsPage() {
             </div>
 
             {/* Update Payment Drawer */}
-            <Drawer open={isUpdatePaymentOpen} onOpenChange={setIsUpdatePaymentOpen}>
-                <DrawerContent className="bg-white rounded-t-[40px] px-0 max-h-[96vh] outline-none border-none">
+            <Drawer open={isUpdatePaymentOpen} onOpenChange={setIsUpdatePaymentOpen} direction={isDesktop ? "right" : "bottom"}>
+                <DrawerContent className={cn(
+                    "bg-white px-0 outline-none border-none",
+                    isDesktop ? "h-full w-[600px] p-4" : "rounded-t-[40px] max-h-[96vh]"
+                )}>
                     <div className="overflow-y-auto px-6 pb-32">
                         <DrawerHeader className="p-0 mb-6 text-center">
                             <DrawerTitle className="text-lg pt-4 font-bold text-black my-1">Payment Details</DrawerTitle>
@@ -524,6 +541,7 @@ function BookingDetailsPage() {
                                             className="max-w-full max-h-64 object-contain"
                                         />
                                         <Button
+                                            type="button"
                                             onClick={removeImage}
                                             variant="secondary"
                                             size="icon"
@@ -538,7 +556,7 @@ function BookingDetailsPage() {
                     </div>
 
                     {/* Footer Buttons */}
-                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 flex gap-4">
+                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 flex gap-4 ">
                         <Button
                             className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg shadow-lg shadow-green-100"
                             onClick={() => {

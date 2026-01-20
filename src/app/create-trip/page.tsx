@@ -127,7 +127,7 @@ function CreateTripPage() {
             {/* Main Content */}
             <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-y-auto ">
                 {step === 1 ? (
-                    <div className="flex flex-col items-center justify-center h-full space-y-8 py-10 xl:max-w-5xl">
+                    <div className="flex flex-col items-center justify-center h-full space-y-8 py-10 xl:max-w-3xl mx-auto">
                         <div className="text-center space-y-2">
                             <div className="flex items-center justify-center gap-2 mb-3">
                                 <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
@@ -313,7 +313,7 @@ function CreateTripPage() {
                         </div>
 
                         {/* Submit Button (Fixed) */}
-                        <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 flex justify-center z-50">
+                        <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 flex justify-center z-50 2xl:ml-[250px]">
                             <Button
                                 type="submit"
                                 disabled={createTripMutation.isPending}

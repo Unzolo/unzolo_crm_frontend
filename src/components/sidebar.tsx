@@ -11,6 +11,8 @@ import {
     LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { apiWithOffline } from "@/lib/api";
 
 const navigation = [
     { name: "Dashboard", href: "/", icon: Home },
@@ -22,6 +24,15 @@ const navigation = [
 export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
+
+    const { data: profile } = useQuery({
+        queryKey: ["profile"],
+        queryFn: async () => {
+            const response = await apiWithOffline.get("/auth/profile");
+            return response.data;
+        },
+        retry: false,
+    });
 
     // Don't show sidebar on auth pages
     if (pathname?.startsWith("/login") || pathname?.startsWith("/signup") || pathname?.startsWith("/otp") || pathname?.startsWith("/forgot-password") || pathname?.startsWith("/reset-password")) {
@@ -38,7 +49,7 @@ export function Sidebar() {
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-gray-200">
             {/* Logo */}
             <div className="flex items-center justify-center h-16 px-6 border-b border-gray-200">
-                <h1 className="text-2xl font-bold text-[#219653]">Koodam</h1>
+                <h1 className="text-xl font-bold text-[#219653] truncate">CRM Portal</h1>
             </div>
 
             {/* Navigation */}

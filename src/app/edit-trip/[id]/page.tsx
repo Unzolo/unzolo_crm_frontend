@@ -17,7 +17,7 @@ import { withAuth } from "@/components/auth/with-auth";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -45,6 +45,7 @@ function EditTripPage() {
     const router = useRouter();
     const params = useParams();
     const tripId = params.id as string;
+    const queryClient = useQueryClient();
 
     const {
         register,
@@ -95,8 +96,10 @@ function EditTripPage() {
                 toast.info("Trip update queued! It will sync when you're online.");
             } else {
                 toast.success("Trip updated successfully!");
+                // Invalidate the trip query to ensure fresh data is fetched on the manage bookings page
+                queryClient.invalidateQueries({ queryKey: ["trip", tripId] });
             }
-            router.push("/");
+            router.push(`/manage-bookings/${tripId}`);
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Failed to update trip.");
@@ -134,7 +137,7 @@ function EditTripPage() {
 
             {/* Main Content */}
             <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-y-auto">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-24">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-24 2xl:max-w-3xl 2xl:mx-auto">
                     {/* Trip Title */}
                     <div className="space-y-1">
                         <label className="text-sm font-medium text-[#219653] ml-1">Trip Title</label>
@@ -282,7 +285,7 @@ function EditTripPage() {
                     </div>
 
                     {/* Submit Button (Fixed) */}
-                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 flex justify-center z-50">
+                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 flex justify-center z-50 2xl:pl-[250px]">
                         <Button
                             type="submit"
                             disabled={editTripMutation.isPending}

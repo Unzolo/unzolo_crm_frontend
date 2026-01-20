@@ -83,6 +83,16 @@ function CreateBookingPage() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isDesktop, setIsDesktop] = useState(false);
+
+    useEffect(() => {
+        const checkDesktop = () => {
+            setIsDesktop(window.innerWidth >= 1024);
+        };
+        checkDesktop();
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
 
     const methods = useForm<CreateBookingValues>({
         resolver: zodResolver(createBookingSchema) as any,
@@ -142,6 +152,10 @@ function CreateBookingPage() {
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (!file.type.startsWith("image/")) {
+                toast.error("Please upload an image file");
+                return;
+            }
             setSelectedFile(file);
             const url = URL.createObjectURL(file);
             setImagePreview(url);
@@ -231,147 +245,150 @@ function CreateBookingPage() {
 
             {/* Main Content */}
             <div className="flex-1 bg-white rounded-t-[30px] p-3 shadow-2xl overflow-y-auto">
-                <div className="flex items-center gap-2 mb-6">
-                    <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
-                    <h2 className="text-lg font-bold text-black ">Participants</h2>
-                </div>
-
-                {/* Participants Count Card */}
-                <Card className="p-4 border-none shadow-none bg-[#219653]/5 rounded-2xl flex flex-row justify-between mb-8">
-                    <div className="flex items-center gap-4 ">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                            <Users className="w-6 h-6 text-[#219653]" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">Participants Count</span>
+                <div className="2xl:max-w-3xl 2xl:mx-auto">
+                    <div className="flex items-center gap-2 mb-6">
+                        <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                        <h2 className="text-lg font-bold text-black ">Participants</h2>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
-                            onClick={() => {
-                                if (fields.length > 1) remove(fields.length - 1);
-                            }}
-                            disabled={fields.length <= 1}
-                        >
-                            <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className=" font-bold text-black min-w-[20px] text-center">{fields.length}</span>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
-                            onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
-                        >
-                            <Plus className="w-4 h-4" />
-                        </Button>
-                    </div>
-                </Card>
 
-                <form id="booking-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-32">
-                    {fields.map((field, index) => (
-                        <Card key={field.id} className="p-3 border-none bg-[#219653]/5 rounded-[24px] space-y-0 relative">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <div className={cn(
-                                        "w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold",
-                                        index === 0 ? "bg-[#219653]" : "bg-gray-400"
-                                    )}>
-                                        {index + 1}
-                                    </div>
-                                    <h3 className={cn("text-sm font-bold", index === 0 ? "text-[#219653]" : "text-gray-500")}>
-                                        {index === 0 ? "Primary Contact" : `Participant ${index + 1}`}
-                                    </h3>
-                                </div>
-                                {index > 0 && (
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
-                                        onClick={() => remove(index)}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                )}
+                    {/* Participants Count Card */}
+                    <Card className="p-4 border-none shadow-none bg-[#219653]/5 rounded-2xl flex flex-row justify-between mb-8">
+                        <div className="flex items-center gap-4 ">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                                <Users className="w-6 h-6 text-[#219653]" />
                             </div>
+                            <span className="text-sm font-medium text-gray-700">Participants Count</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
+                                onClick={() => {
+                                    if (fields.length > 1) remove(fields.length - 1);
+                                }}
+                                disabled={fields.length <= 1}
+                            >
+                                <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className=" font-bold text-black min-w-[20px] text-center">{fields.length}</span>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
+                                onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
+                            >
+                                <Plus className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </Card>
 
-                            <div className="grid grid-cols-12 gap-x-4 gap-y-4 pt-0">
-                                <div className="col-span-9 space-y-1.5">
-                                    <label className="text-xs font-bold text-black ml-1">Full Name</label>
-                                    <Input
-                                        {...register(`members.${index}.name`)}
-                                        placeholder="Enter Name"
-                                        className={cn(
-                                            "h-12 placeholder:text-sm mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
-                                            errors.members?.[index]?.name && "border-red-500 focus-visible:ring-red-500"
-                                        )}
-                                    />
-                                </div>
-                                <div className="col-span-3 space-y-1.5">
-                                    <label className="text-xs font-bold text-black ml-1">Gender</label>
-                                    <Controller
-                                        control={control}
-                                        name={`members.${index}.gender`}
-                                        render={({ field }) => (
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <SelectTrigger className="h-12 mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]">
-                                                    <SelectValue placeholder="Select" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="male">Male</SelectItem>
-                                                    <SelectItem value="female">Female</SelectItem>
-                                                    <SelectItem value="other">Other</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
+                    <form id="booking-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-32">
+                        {fields.map((field, index) => (
+                            <Card key={field.id} className="p-3 border-none bg-[#219653]/5 rounded-[24px] space-y-0 relative">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                            "w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold",
+                                            index === 0 ? "bg-[#219653]" : "bg-gray-400"
+                                        )}>
+                                            {index + 1}
+                                        </div>
+                                        <h3 className={cn("text-sm font-bold", index === 0 ? "text-[#219653]" : "text-gray-500")}>
+                                            {index === 0 ? "Primary Contact" : `Participant ${index + 1}`}
+                                        </h3>
+                                    </div>
+                                    {index > 0 && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
+                                            onClick={() => remove(index)}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
                                 </div>
 
-                                {index === 0 && (
+                                <div className="grid grid-cols-12 gap-x-4 gap-y-4 pt-0">
                                     <div className="col-span-9 space-y-1.5">
-                                        <label className="text-xs font-bold text-black ml-1">Contact Number</label>
+                                        <label className="text-xs font-bold text-black ml-1">Full Name</label>
                                         <Input
-                                            {...register(`members.${index}.contactNumber`)}
-                                            placeholder="Phone number"
-                                            type="number"
+                                            {...register(`members.${index}.name`)}
+                                            placeholder="Enter Name"
                                             className={cn(
-                                                "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
-                                                errors.members?.[index]?.contactNumber && "border-red-500"
+                                                "h-12 placeholder:text-sm mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
+                                                errors.members?.[index]?.name && "border-red-500 focus-visible:ring-red-500"
                                             )}
                                         />
                                     </div>
-                                )}
+                                    <div className="col-span-3 space-y-1.5">
+                                        <label className="text-xs font-bold text-black ml-1">Gender</label>
+                                        <Controller
+                                            control={control}
+                                            name={`members.${index}.gender`}
+                                            render={({ field }) => (
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <SelectTrigger className="h-12 mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]">
+                                                        <SelectValue placeholder="Select" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="male">Male</SelectItem>
+                                                        <SelectItem value="female">Female</SelectItem>
+                                                        <SelectItem value="other">Other</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                    </div>
 
-                                <div className={cn(index === 0 ? "col-span-3" : "col-span-3", "space-y-1.5")}>
-                                    <label className="text-xs font-bold text-black ml-1">Age</label>
-                                    <Input
-                                        {...register(`members.${index}.age`)}
-                                        type="number"
-                                        placeholder="eg: 20"
-                                        className={cn(
-                                            "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
-                                            errors.members?.[index]?.age && "border-red-500"
-                                        )}
-                                    />
+                                    {index === 0 && (
+                                        <div className="col-span-9 space-y-1.5">
+                                            <label className="text-xs font-bold text-black ml-1">Contact Number</label>
+                                            <Input
+                                                {...register(`members.${index}.contactNumber`)}
+                                                placeholder="Phone number"
+                                                type="number"
+                                                className={cn(
+                                                    "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
+                                                    errors.members?.[index]?.contactNumber && "border-red-500"
+                                                )}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className={cn(index === 0 ? "col-span-3" : "col-span-3", "space-y-1.5")}>
+                                        <label className="text-xs font-bold text-black ml-1">Age</label>
+                                        <Input
+                                            {...register(`members.${index}.age`)}
+                                            type="number"
+                                            placeholder="eg: 20"
+                                            className={cn(
+                                                "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
+                                                errors.members?.[index]?.age && "border-red-500"
+                                            )}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        </Card>
-                    ))}
+                            </Card>
+                        ))}
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full h-16 rounded-2xl border-2 border-dashed border-[#219653] text-[#219653] font-bold text-lg hover:bg-[#F5F9F7] bg-white gap-2"
-                        onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
-                    >
-                        <Plus className="w-6 h-6" /> Add Participant
-                    </Button>
-                </form>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-16 rounded-2xl border-2 border-dashed border-[#219653] text-[#219653] font-bold text-lg hover:bg-[#F5F9F7] bg-white gap-2"
+                            onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
+                        >
+                            <Plus className="w-6 h-6" /> Add Participant
+                        </Button>
+                    </form>
+                </div>
+
             </div>
 
             {/* Bottom Button */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex justify-center z-40">
+            <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 flex justify-center z-40 2xl:max-w-3xl 2xl:mx-auto 2xl:pl-[250px]">
                 <Button
                     onClick={async () => {
                         const isValid = await trigger("members");
@@ -386,8 +403,11 @@ function CreateBookingPage() {
             </div>
 
             {/* Payment Details Drawer */}
-            <Drawer open={showPayment} onOpenChange={setShowPayment}>
-                <DrawerContent className="bg-white rounded-t-[40px] px-0 max-h-[96vh] outline-none border-none">
+            <Drawer open={showPayment} onOpenChange={setShowPayment} direction={isDesktop ? "right" : "bottom"}>
+                <DrawerContent className={cn(
+                    "bg-white px-0 outline-none border-none",
+                    isDesktop ? "h-full w-[600px] p-4" : "rounded-t-[40px] max-h-[96vh]"
+                )}>
                     <div className="overflow-y-auto px-6 pb-32">
                         <DrawerHeader className="p-0 mb-6 text-center">
                             <DrawerTitle className="text-lg font-bold text-black my-1">Payment Details</DrawerTitle>
@@ -579,6 +599,7 @@ function CreateBookingPage() {
                                             className="max-w-full max-h-64 object-contain"
                                         />
                                         <Button
+                                            type="button"
                                             onClick={removeImage}
                                             variant="secondary"
                                             size="icon"
@@ -593,7 +614,7 @@ function CreateBookingPage() {
                     </div>
 
                     {/* Footer Button */}
-                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-100 z-50">
+                    <div className="lg:left-64 p-6 bg-white border-t border-gray-100 z-50 2xl:max-w-3xl 2xl:mx-auto">
                         <Button
                             form="booking-form"
                             type="submit"
@@ -610,6 +631,7 @@ function CreateBookingPage() {
                             )}
                         </Button>
                     </div>
+
                 </DrawerContent>
             </Drawer>
         </div>
