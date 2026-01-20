@@ -69,12 +69,12 @@ function DashboardPage() {
 
   const stats = [
     {
-      label: "Total Trips",
+      label: "Total Trips Count",
       value: dashboardStats.totalTrips.toString(),
       icon: <Package className="w-6 h-6 text-[#219653]" />,
     },
     {
-      label: "Total Booking",
+      label: "Total Bookings",
       value: dashboardStats.totalBookings.toString(),
       icon: <ClipboardCheck className="w-6 h-6 text-[#219653]" />,
     },
@@ -84,7 +84,7 @@ function DashboardPage() {
       icon: <IndianRupee className="w-6 h-6 text-[#219653]" />,
     },
     {
-      label: "Mo Earnings",
+      label: "Monthly Earnings",
       value: `₹${dashboardStats.monthlyEarnings.toLocaleString()}`,
       icon: <IndianRupee className="w-6 h-6 text-[#219653]" />,
     },
@@ -166,7 +166,7 @@ function DashboardPage() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {stats.map((stat, index) => (
-                <Card key={index} className="p-4 lg:p-6 border-none shadow-sm rounded-[24px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50 hover:shadow-md hover:ring-[#219653]/10 transition-all group">
+                <Card key={index} className="p-4 lg:p-6 border-none shadow-sm rounded-[16px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50 hover:shadow-md hover:ring-[#219653]/10 transition-all group">
                   <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0 group-hover:bg-[#219653]/10 transition-colors">
                     <div className="group-hover:scale-110 transition-transform">{stat.icon}</div>
                   </div>
@@ -190,7 +190,7 @@ function DashboardPage() {
               {actions.map((action, index) => (
                 <Card
                   key={index}
-                  className="p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] bg-white flex flex-row items-center gap-4 lg:gap-6 border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98] group"
+                  className="p-4 lg:p-6 rounded-[16px] lg:rounded-[32px] bg-[#219653]/10 lg:bg-white flex flex-row items-center gap-4 lg:gap-6 border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98] group"
                   onClick={action.onClick}
                 >
                   <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#219653] flex items-center justify-center shrink-0 shadow-sm transition-transform ">
