@@ -73,9 +73,8 @@ function SelectTripPage() {
     const allTrips = tripsResponse?.data || [];
 
     const isTripCompleted = (trip: any) => {
-        if (!trip.endDate && !trip.startDate) return false;
-        const compareDate = trip.endDate || trip.startDate;
-        return new Date(compareDate) < new Date(new Date().setHours(0, 0, 0, 0));
+        if (!trip.startDate) return false;
+        return new Date(trip.startDate) < new Date(new Date().setHours(0, 0, 0, 0));
     };
 
     const processTrips = (trips: any[]) => {
