@@ -94,8 +94,8 @@ function SelectTripPage() {
 
     return (
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
-            {/* Header */}
-            <div className="p-4 flex items-center justify-between">
+            {/* Header - Mobile Only */}
+            <div className="p-4 flex items-center justify-between lg:hidden">
                 <Button
                     variant="ghost"
                     size="icon"
@@ -108,153 +108,163 @@ function SelectTripPage() {
                 <div className="w-10" />
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-hidden flex flex-col">
-                <div className="shrink-0">
-                    <div className="mb-6 mt-2">
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
-                            <h2 className="text-lg font-bold text-black">Select Trip</h2>
-                        </div>
-                        <p className="text-xs text-gray-400 font-medium ml-3">Choose a camp or package to manage its bookings</p>
-                    </div>
+            {/* Desktop Header */}
+            <div className="hidden lg:block p-6 bg-white border-b border-gray-200">
+                <div className="max-w-5xl mx-auto">
+                    <h1 className="text-3xl font-bold text-black">Manage Bookings</h1>
+                    <p className="text-sm text-gray-500 mt-1">Select a trip to view and manage its bookings</p>
+                </div>
+            </div>
 
-                    {/* Search and Sort */}
-                    <div className="flex gap-2 mb-6 px-1">
-                        <div className="relative flex-1">
-                            <Input
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search by title or destination"
-                                className="h-12 bg-gray-50/50 border-gray-100 rounded-xl pr-10 focus-visible:ring-[#219653] placeholder:text-sm"
-                            />
-                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#219653]" />
+            {/* Main Content */}
+            <div className="flex-1 bg-white rounded-t-[30px] lg:rounded-none p-4 lg:p-6 shadow-2xl lg:shadow-none overflow-hidden flex flex-col">
+                <div className="max-w-5xl mx-auto w-full flex flex-col flex-1 overflow-hidden">
+                    <div className="shrink-0">
+                        <div className="mb-6 mt-2">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                                <h2 className="text-lg lg:text-xl font-bold text-black">Select Trip</h2>
+                            </div>
+                            <p className="text-xs lg:text-sm text-gray-400 font-medium ml-3">Choose a camp or package to manage its bookings</p>
                         </div>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-none bg-gray-50/50">
-                                    <SlidersHorizontal className="w-5 h-5 text-[#219653]" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-56 p-3 rounded-2xl border-none shadow-xl bg-white" align="end">
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sort By</p>
-                                        <div className="grid grid-cols-1 gap-1">
-                                            {[
-                                                { label: "Trip Date", value: "date" },
-                                                { label: "Price", value: "price" },
-                                                { label: "Title", value: "title" },
-                                            ].map((option) => (
-                                                <Button
-                                                    key={option.value}
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => setSortBy(option.value as any)}
+
+                        {/* Search and Sort */}
+                        <div className="flex gap-2 mb-6 px-1">
+                            <div className="relative flex-1">
+                                <Input
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search by title or destination"
+                                    className="h-12 bg-gray-50/50 border-gray-100 rounded-xl pr-10 focus-visible:ring-[#219653] placeholder:text-sm"
+                                />
+                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#219653]" />
+                            </div>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-xl border-none bg-gray-50/50">
+                                        <SlidersHorizontal className="w-5 h-5 text-[#219653]" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56 p-3 rounded-2xl border-none shadow-xl bg-white" align="end">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sort By</p>
+                                            <div className="grid grid-cols-1 gap-1">
+                                                {[
+                                                    { label: "Trip Date", value: "date" },
+                                                    { label: "Price", value: "price" },
+                                                    { label: "Title", value: "title" },
+                                                ].map((option) => (
+                                                    <Button
+                                                        key={option.value}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setSortBy(option.value as any)}
+                                                        className={cn(
+                                                            "w-full justify-start rounded-lg text-sm",
+                                                            sortBy === option.value ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
+                                                        )}
+                                                    >
+                                                        {option.label}
+                                                    </Button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="h-px bg-gray-100" />
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Order</p>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setSortOrder("asc")}
                                                     className={cn(
-                                                        "w-full justify-start rounded-lg text-sm",
-                                                        sortBy === option.value ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
+                                                        "flex-1 rounded-lg text-sm py-2 px-3 transition-colors",
+                                                        sortOrder === "asc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
                                                     )}
                                                 >
-                                                    {option.label}
-                                                </Button>
-                                            ))}
+                                                    Asc
+                                                </button>
+                                                <button
+                                                    onClick={() => setSortOrder("desc")}
+                                                    className={cn(
+                                                        "flex-1 rounded-lg text-sm py-2 px-3 transition-colors",
+                                                        sortOrder === "desc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
+                                                    )}
+                                                >
+                                                    Desc
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="h-px bg-gray-100" />
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Order</p>
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => setSortOrder("asc")}
-                                                className={cn(
-                                                    "flex-1 rounded-lg text-sm py-2 px-3 transition-colors",
-                                                    sortOrder === "asc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
-                                                )}
-                                            >
-                                                Asc
-                                            </button>
-                                            <button
-                                                onClick={() => setSortOrder("desc")}
-                                                className={cn(
-                                                    "flex-1 rounded-lg text-sm py-2 px-3 transition-colors",
-                                                    sortOrder === "desc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
-                                                )}
-                                            >
-                                                Desc
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                     </div>
+
+                    <Tabs defaultValue="camps" className="w-full flex-1 flex flex-col overflow-hidden">
+                        <TabsList className="grid w-full grid-cols-2 bg-[#E2F1E8] rounded-xl p-1 h-11 shrink-0 mb-4">
+                            <TabsTrigger
+                                value="camps"
+                                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-bold"
+                            >
+                                Camps ({camps.length})
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="packages"
+                                className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-bold"
+                            >
+                                Packages ({packages.length})
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <div className="flex-1 overflow-y-auto pb-4 pr-1 -mr-1">
+                            <TabsContent value="camps" className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 outline-none m-0">
+                                {tripsLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                        <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
+                                        <p className="text-gray-400 font-medium">Loading camps...</p>
+                                    </div>
+                                ) : camps.length > 0 ? (
+                                    camps.map((trip: any) => (
+                                        <TripCard
+                                            key={trip._id || trip.id}
+                                            trip={trip}
+                                            onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
+                                            onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
+                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-20 px-10">
+                                        <p className="text-gray-400 font-medium">No camps found matching your search.</p>
+                                    </div>
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="packages" className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 outline-none m-0">
+                                {tripsLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                        <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
+                                        <p className="text-gray-400 font-medium">Loading packages...</p>
+                                    </div>
+                                ) : packages.length > 0 ? (
+                                    packages.map((trip: any) => (
+                                        <TripCard
+                                            key={trip.id}
+                                            trip={trip}
+                                            onEdit={() => router.push(`/edit-trip/${trip.id}`)}
+                                            onDelete={() => deleteTripMutation.mutate(trip.id)}
+                                            onClick={() => router.push(`/manage-bookings/${trip.id}`)}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="text-center py-20 px-10">
+                                        <p className="text-gray-400 font-medium">No packages found matching your search.</p>
+                                    </div>
+                                )}
+                            </TabsContent>
+                        </div>
+                    </Tabs>
                 </div>
-
-                <Tabs defaultValue="camps" className="w-full flex-1 flex flex-col overflow-hidden">
-                    <TabsList className="grid w-full grid-cols-2 bg-[#E2F1E8] rounded-xl p-1 h-11 shrink-0 mb-4">
-                        <TabsTrigger
-                            value="camps"
-                            className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-bold"
-                        >
-                            Camps ({camps.length})
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="packages"
-                            className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-bold"
-                        >
-                            Packages ({packages.length})
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <div className="flex-1 overflow-y-auto pb-4 pr-1 -mr-1">
-                        <TabsContent value="camps" className="space-y-4 outline-none m-0">
-                            {tripsLoading ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                                    <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
-                                    <p className="text-gray-400 font-medium">Loading camps...</p>
-                                </div>
-                            ) : camps.length > 0 ? (
-                                camps.map((trip: any) => (
-                                    <TripCard
-                                        key={trip._id || trip.id}
-                                        trip={trip}
-                                        onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
-                                        onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
-                                        onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
-                                    />
-                                ))
-                            ) : (
-                                <div className="text-center py-20 px-10">
-                                    <p className="text-gray-400 font-medium">No camps found matching your search.</p>
-                                </div>
-                            )}
-                        </TabsContent>
-
-                        <TabsContent value="packages" className="space-y-4 outline-none m-0">
-                            {tripsLoading ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-3">
-                                    <Loader2 className="w-10 h-10 text-[#219653] animate-spin" />
-                                    <p className="text-gray-400 font-medium">Loading packages...</p>
-                                </div>
-                            ) : packages.length > 0 ? (
-                                packages.map((trip: any) => (
-                                    <TripCard
-                                        key={trip.id}
-                                        trip={trip}
-                                        onEdit={() => router.push(`/edit-trip/${trip.id}`)}
-                                        onDelete={() => deleteTripMutation.mutate(trip.id)}
-                                        onClick={() => router.push(`/manage-bookings/${trip.id}`)}
-                                    />
-                                ))
-                            ) : (
-                                <div className="text-center py-20 px-10">
-                                    <p className="text-gray-400 font-medium">No packages found matching your search.</p>
-                                </div>
-                            )}
-                        </TabsContent>
-                    </div>
-                </Tabs>
             </div>
         </div>
     );

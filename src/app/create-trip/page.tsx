@@ -125,9 +125,9 @@ function CreateTripPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-y-auto">
+            <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-y-auto ">
                 {step === 1 ? (
-                    <div className="flex flex-col items-center justify-center h-full space-y-8 py-10">
+                    <div className="flex flex-col items-center justify-center h-full space-y-8 py-10 xl:max-w-5xl">
                         <div className="text-center space-y-2">
                             <div className="flex items-center justify-center gap-2 mb-3">
                                 <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
@@ -165,7 +165,7 @@ function CreateTripPage() {
                         </div>
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-24">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-24 xl:max-w-3xl mx-auto">
                         {/* Trip Title */}
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-[#219653] ml-1">Trip Title</label>

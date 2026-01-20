@@ -107,8 +107,8 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
-      {/* Header */}
-      <div className="p-5 flex items-center justify-between">
+      {/* Header - Mobile Only */}
+      <div className="p-5 flex items-center justify-between lg:hidden">
         <div className="w-10" />
         <h1 className="text-xl font-bold text-black flex-1 text-center font-sans tracking-tight">Koodam</h1>
 
@@ -146,56 +146,66 @@ function DashboardPage() {
         </Popover>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl">
-        {/* Quick Stats Section */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
-            <h2 className="text-lg font-bold text-black">Quick Stats</h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {stats.map((stat, index) => (
-              <Card key={index} className="p-3 border-none shadow-sm rounded-2xl flex flex-row gap-3 bg-white ring-1 ring-gray-50">
-                <div className="w-12 h-12 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
-                  {stat.icon}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-500 font-medium">{stat.label}</span>
-                  <span className="text-lg font-bold text-black">{stat.value}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
+      {/* Desktop Header */}
+      <div className="hidden lg:block p-6 bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto">
+          <h1 className="text-3xl font-bold text-black">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">Welcome back! Here's your overview</p>
         </div>
+      </div>
 
-        {/* Quick Actions Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
-            <h2 className="text-lg font-bold text-black">Quick Actions</h2>
+      {/* Main Content */}
+      <div className="flex-1 bg-white lg:bg-transparent rounded-t-[30px] lg:rounded-none p-4 lg:p-6 shadow-2xl lg:shadow-none">
+        <div className="max-w-5xl mx-auto">
+          {/* Quick Stats Section */}
+          <div className="mb-6 lg:mb-8">
+            <div className="flex items-center gap-2 mb-3 lg:mb-4">
+              <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+              <h2 className="text-lg lg:text-xl font-bold text-black">Quick Stats</h2>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+              {stats.map((stat, index) => (
+                <Card key={index} className="p-3 lg:p-4 border-none shadow-sm rounded-2xl flex flex-row gap-3 bg-white ring-1 ring-gray-50 hover:shadow-md transition-shadow">
+                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
+                    {stat.icon}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[11px] lg:text-xs text-gray-500 font-medium">{stat.label}</span>
+                    <span className="text-lg lg:text-xl font-bold text-black">{stat.value}</span>
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3">
-            {actions.map((action, index) => (
-              <Button
-                key={index}
-                variant="ghost"
-                className="w-full h-auto p-3 py-4 rounded-[20px] bg-[#E2F1E8] hover:bg-[#d5e9dc] flex flex-row items-center justify-start gap-3 border-none transition-all active:scale-[0.98]"
-                onClick={action.onClick}
-              >
-                <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center shrink-0 shadow-sm">
-                  <div className="text-white">
-                    {action.icon}
+          {/* Quick Actions Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-3 lg:mb-4">
+              <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+              <h2 className="text-lg lg:text-xl font-bold text-black">Quick Actions</h2>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+              {actions.map((action, index) => (
+                <Button
+                  key={index}
+                  variant="ghost"
+                  className="w-full h-auto p-3 lg:p-4 py-4 lg:py-5 rounded-[20px] bg-[#E2F1E8] hover:bg-[#d5e9dc] flex flex-row items-center justify-start gap-3 lg:gap-4 border-none transition-all active:scale-[0.98]"
+                  onClick={action.onClick}
+                >
+                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-[#219653] flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="text-white">
+                      {action.icon}
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col items-start text-left min-w-0">
-                  <span className="text-sm font-bold text-black leading-tight truncate w-full">{action.title}</span>
-                  <p className="text-[10px] text-gray-500 font-medium mt-0.5 leading-tight line-clamp-2">{action.description}</p>
-                </div>
-              </Button>
-            ))}
+                  <div className="flex flex-col items-start text-left min-w-0">
+                    <span className="text-sm lg:text-base font-bold text-black leading-tight truncate w-full">{action.title}</span>
+                    <p className="text-[10px] lg:text-xs text-gray-500 font-medium mt-0.5 leading-tight line-clamp-2">{action.description}</p>
+                  </div>
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

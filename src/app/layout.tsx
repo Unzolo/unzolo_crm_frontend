@@ -42,6 +42,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { OfflineProvider } from "@/components/offline-provider";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { PwaInstallBanner } from "@/components/pwa-install-prompt";
+import { Sidebar } from "@/components/sidebar";
 
 export default function RootLayout({
   children,
@@ -55,7 +56,10 @@ export default function RootLayout({
       >
         <QueryProvider>
           <OfflineProvider>
-            {children}
+            <Sidebar />
+            <main className="lg:pl-64">
+              {children}
+            </main>
             <Toaster position="top-center" richColors />
             <OfflineIndicator />
             <PwaInstallBanner />
