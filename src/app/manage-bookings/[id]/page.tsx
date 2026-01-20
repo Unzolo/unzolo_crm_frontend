@@ -215,7 +215,7 @@ function ManageBookingPage() {
                     <Card className="p-4 rounded-2xl border-none ring-1 ring-gray-100 shadow-sm mb-4 bg-white relative gap-2">
                         <button
                             onClick={() => setIsStatsExpanded(!isStatsExpanded)}
-                            className="absolute right-4 top-4 p-1 px-2 flex flex-row items-center text-xs rounded-full bg-gray-[#219653]/10 text-[#219653] hover:text-[#219653] transition-colors"
+                            className="absolute right-4 top-4 p-1 px-2 flex flex-row items-center text-xs rounded-full bg-[#219653]/10 text-[#219653] hover:text-[#219653] transition-colors"
                         >
                             <span>Overview</span>
                             {isStatsExpanded ? <ChevronUp className="w-5 h-5 text-[#219653]" /> : <ChevronDown className="w-5 h-5" />}
@@ -287,7 +287,7 @@ function ManageBookingPage() {
                                 {stats.map((stat, index) => {
                                     if (stat.type === "split") {
                                         return (
-                                            <Card key={index} className={cn("p-4 border-none shadow-sm rounded-2xl ring-1 ring-gray-100/50 flex flex-row items-center justify-between col-span-1", (stat as any).bgColor)}>
+                                            <Card key={index} className={cn("p-4 border-none shadow-sm rounded-2xl ring-1 ring-gray-100/50 flex flex-row items-center justify-between", (stat as any).bgColor)}>
                                                 <div className="flex-1 flex flex-col items-center justify-center text-center">
                                                     <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-2 whitespace-nowrap">{stat.left?.label}</span>
                                                     <span className={`text-lg font-bold leading-tight ${stat.left?.color}`}>{stat.left?.value}</span>
@@ -421,9 +421,9 @@ function ManageBookingPage() {
                     </div>
 
                     {/* Bookings List */}
-                    <div className="space-y-3 pb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 pb-8">
                         {bookingsLoading ? (
-                            Array.from({ length: 5 }).map((_, i) => (
+                            Array.from({ length: 9 }).map((_, i) => (
                                 <Card key={i} className="p-4 rounded-2xl border-none bg-white shadow-sm ring-1 ring-gray-100 flex flex-row gap-4">
                                     <Skeleton className="w-12 h-12 rounded-full shrink-0" />
                                     <div className="flex-1 space-y-2">
@@ -514,7 +514,7 @@ function ManageBookingPage() {
                                     );
                                 })
                             ) : (
-                                <div className="text-center py-16 bg-white rounded-3xl ring-1 ring-gray-100/50">
+                                <div className="text-center py-16 bg-white rounded-3xl ring-1 ring-gray-100/50 col-span-full">
                                     <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
                                         <ClipboardCheck className="w-8 h-8 text-gray-300" />
                                     </div>

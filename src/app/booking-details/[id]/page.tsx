@@ -234,8 +234,8 @@ function BookingDetailsPage() {
                             <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
                             <h4 className="text-lg font-semibold text-black">Participants Details</h4>
                         </div>
-                        <div className="space-y-2">
-                            {booking.Customers?.map((p: any, i: number) => (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            {booking?.Customers?.map((p: any, i: number) => (
                                 <Card key={p.id || i} className={cn(
                                     "p-4 border-none rounded-2xl flex flex-row justify-between shadow-none relative overflow-hidden",
                                     p.status === 'cancelled' ? "bg-red-50/50 opacity-80" : "bg-gray-50/50"
@@ -263,7 +263,7 @@ function BookingDetailsPage() {
                                     </div>
                                 </Card>
                             ))}
-                            {booking.Trip?.type === 'package' && (booking.totalMemberCount || booking.memberCount || 0) > (booking.Customers?.length || 0) && (
+                            {booking?.Trip?.type === 'package' && (booking.totalMemberCount || booking.memberCount || 0) > (booking.Customers?.length || 0) && (
                                 <Card className="p-4 rounded-2xl flex flex-row justify-between shadow-none bg-gray-50/30 border-dashed border-2 border-gray-100">
                                     <div className="flex flex-row gap-3 items-center">
                                         <div className="w-9 h-9 rounded-full bg-white/50 flex items-center justify-center">
@@ -292,18 +292,18 @@ function BookingDetailsPage() {
                                 {/* Header: Target vs Collected */}
                                 <div className="space-y-0.5">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold">Total Amount</p>
-                                    <p className="text-xl font-bold text-[#219653]">₹{parseFloat(booking.totalCost || "0").toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-[#219653]">₹{parseFloat(booking?.totalCost || "0").toLocaleString()}</p>
                                 </div>
                                 <div className="space-y-0.5 text-right">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold">Paid so far</p>
-                                    <p className="text-xl font-bold text-black">₹{parseFloat(booking.paidAmount || "0").toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-black">₹{parseFloat(booking?.paidAmount || "0").toLocaleString()}</p>
                                 </div>
 
                                 {/* Intermediate: Refund if any */}
-                                {parseFloat(booking.refundAmount || "0") > 0 && (
+                                {parseFloat(booking?.refundAmount || "0") > 0 && (
                                     <div className="col-span-2 flex items-center justify-between py-2 px-3 bg-white/60 rounded-xl border border-gray-100/50">
                                         <p className="text-[9px] text-gray-400 uppercase font-bold tracking-tight">Refunded Amount</p>
-                                        <p className="text-sm font-bold text-orange-500">₹{parseFloat(booking.refundAmount || "0").toLocaleString()}</p>
+                                        <p className="text-sm font-bold text-orange-500">₹{parseFloat(booking?.refundAmount || "0").toLocaleString()}</p>
                                     </div>
                                 )}
 
@@ -311,14 +311,14 @@ function BookingDetailsPage() {
                                 <div className="col-span-2 pt-2 border-t border-dashed border-gray-200">
                                     <div className="flex justify-between items-end mt-1">
                                         <p className="text-xs text-gray-500 font-bold uppercase tracking-tight mb-1">
-                                            {parseFloat(booking.remainingAmount || "0") < 0 ? "Refund Due" : "Remaining Balance"}
+                                            {parseFloat(booking?.remainingAmount || "0") < 0 ? "Refund Due" : "Remaining Balance"}
                                         </p>
                                         <p className={cn(
                                             "text-2xl font-semibold leading-none",
-                                            parseFloat(booking.remainingAmount || "0") < 0 ? "text-orange-500" :
-                                                parseFloat(booking.remainingAmount || "0") === 0 ? "text-[#219653]" : "text-red-500"
+                                            parseFloat(booking?.remainingAmount || "0") < 0 ? "text-orange-500" :
+                                                parseFloat(booking?.remainingAmount || "0") === 0 ? "text-[#219653]" : "text-red-500"
                                         )}>
-                                            ₹{parseFloat(booking.remainingAmount || "0").toLocaleString()}
+                                            ₹{parseFloat(booking?.remainingAmount || "0").toLocaleString()}
                                         </p>
                                     </div>
                                     {/* {parseFloat(booking.remainingAmount || "0") < 0 && (
@@ -399,33 +399,35 @@ function BookingDetailsPage() {
             </div>
 
             {/* Sticky Footer */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-50 flex gap-4 max-w-3xl 2xl:max-w-4xl ml-[500px]">
-                <Button
-                    onClick={() => setIsUpdatePaymentOpen(true)}
-                    disabled={booking.remainingAmount <= 0 || booking.status?.toLowerCase() === 'cancelled'}
-                    className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-5 rounded-full text-white font-bold disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                    Update Payment
-                </Button>
-                <Button
-                    variant="outline"
-                    disabled={booking.status?.toLowerCase() === 'cancelled'}
-                    onClick={() => {
-                        const bookingData = {
-                            _id: booking._id || booking.id,
-                            trip: booking.Trip,
-                            customers: booking.Customers,
-                            totalAmount: booking.totalCost,
-                            paidAmount: booking.paidAmount,
-                            refundAmount: booking.refundAmount
-                        };
-                        const encoded = encodeURIComponent(JSON.stringify(bookingData));
-                        router.push(`/cancel-booking?data=${encoded}`);
-                    }}
-                    className="flex-1 py-5 rounded-full border-2 border-[#219653] text-[#219653] font-bold hover:bg-[#F5F9F7] disabled:border-gray-300 disabled:text-gray-300 disabled:bg-white disabled:cursor-not-allowed"
-                >
-                    {booking.status?.toLowerCase() === 'cancelled' ? 'Booking Cancelled' : 'Cancel Booking'}
-                </Button>
+            <div className="fixed bottom-0 left-0 lg:left-64 right-0 bg-white p-4 border-t border-gray-50 flex justify-center z-40">
+                <div className="flex gap-4 w-full max-w-3xl">
+                    <Button
+                        onClick={() => setIsUpdatePaymentOpen(true)}
+                        disabled={booking?.remainingAmount <= 0 || booking?.status?.toLowerCase() === 'cancelled'}
+                        className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-5 rounded-full text-white font-bold disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                        Update Payment
+                    </Button>
+                    <Button
+                        variant="outline"
+                        disabled={booking?.status?.toLowerCase() === 'cancelled'}
+                        onClick={() => {
+                            const bookingData = {
+                                _id: booking?._id || booking?.id,
+                                trip: booking?.Trip,
+                                customers: booking?.Customers,
+                                totalAmount: booking?.totalCost,
+                                paidAmount: booking?.paidAmount,
+                                refundAmount: booking?.refundAmount
+                            };
+                            const encoded = encodeURIComponent(JSON.stringify(bookingData));
+                            router.push(`/cancel-booking?data=${encoded}`);
+                        }}
+                        className="flex-1 py-5 rounded-full border-2 border-[#219653] text-[#219653] font-bold hover:bg-[#F5F9F7] disabled:border-gray-300 disabled:text-gray-300 disabled:bg-white disabled:cursor-not-allowed"
+                    >
+                        {booking?.status?.toLowerCase() === 'cancelled' ? 'Booking Cancelled' : 'Cancel Booking'}
+                    </Button>
+                </div>
             </div>
 
             {/* Update Payment Drawer */}
@@ -440,8 +442,8 @@ function BookingDetailsPage() {
                         </DrawerHeader>
 
                         <div className="mb-6">
-                            <h3 className=" text-black font-semibold">{booking.Trip?.title}</h3>
-                            <p className="text-xs text-gray-400 font-bold">Participants : {booking.activeMemberCount || booking.totalMemberCount || booking.Customers?.length} Adults</p>
+                            <h3 className=" text-black font-semibold">{booking?.Trip?.title}</h3>
+                            <p className="text-xs text-gray-400 font-bold">Participants : {booking?.activeMemberCount || booking?.totalMemberCount || booking?.Customers?.length} Adults</p>
                         </div>
 
                         <div className="space-y-4 mb-8">
@@ -466,7 +468,7 @@ function BookingDetailsPage() {
                                         <p className="text-xs text-gray-400 font-medium">Pay complete remaining amount</p>
                                     </div>
                                 </div>
-                                <span className="text-lg font-bold text-[#219653]">₹{booking.remainingAmount}</span>
+                                <span className="text-lg font-bold text-[#219653]">₹{booking?.remainingAmount}</span>
                             </Card>
 
 
@@ -593,7 +595,7 @@ function BookingDetailsPage() {
                     </div>
 
                     {/* Footer Buttons */}
-                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 flex gap-4 ">
+                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 flex gap-4">
                         <Button
                             className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg shadow-lg shadow-green-100"
                             onClick={() => {

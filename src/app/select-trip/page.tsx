@@ -252,24 +252,26 @@ function SelectTripPage() {
                         </TabsList>
 
                         <div className="flex-1 overflow-y-auto pb-4 pr-1 -mr-1">
-                            <TabsContent value="camps" className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 outline-none m-0">
+                            <TabsContent value="camps" className="outline-none w-full">
                                 {tripsLoading ? (
-                                    Array.from({ length: 6 }).map((_, i) => (
-                                        <Card key={i} className="p-4 rounded-[20px] bg-white border-none shadow-sm ring-1 ring-gray-100 flex flex-col gap-3">
-                                            <div className="flex justify-between items-start">
-                                                <Skeleton className="w-10 h-10 rounded-xl" />
-                                                <Skeleton className="w-16 h-6 rounded-lg" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-5 w-3/4 rounded-md" />
-                                                <Skeleton className="h-4 w-1/2 rounded-md" />
-                                            </div>
-                                            <div className="pt-2 border-t border-gray-50 flex justify-between items-center">
-                                                <Skeleton className="h-6 w-24 rounded-md" />
-                                                <Skeleton className="h-8 w-8 rounded-full" />
-                                            </div>
-                                        </Card>
-                                    ))
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        {Array.from({ length: 6 }).map((_, i) => (
+                                            <Card key={i} className="p-4 rounded-[20px] bg-white border-none shadow-sm ring-1 ring-gray-100 flex flex-col gap-3">
+                                                <div className="flex justify-between items-start">
+                                                    <Skeleton className="w-10 h-10 rounded-xl" />
+                                                    <Skeleton className="w-16 h-6 rounded-lg" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Skeleton className="h-5 w-3/4 rounded-md" />
+                                                    <Skeleton className="h-4 w-1/2 rounded-md" />
+                                                </div>
+                                                <div className="pt-2 border-t border-gray-50 flex justify-between items-center">
+                                                    <Skeleton className="h-6 w-24 rounded-md" />
+                                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
                                 ) : (camps.upcoming.length > 0 || camps.completed.length > 0) ? (
                                     <div className="space-y-6">
                                         {camps.upcoming.length > 0 && (
@@ -312,24 +314,26 @@ function SelectTripPage() {
                                 )}
                             </TabsContent>
 
-                            <TabsContent value="packages" className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 outline-none m-0">
+                            <TabsContent value="packages" className="outline-none m-0">
                                 {tripsLoading ? (
-                                    Array.from({ length: 6 }).map((_, i) => (
-                                        <Card key={i} className="p-4 rounded-[20px] bg-white border-none shadow-sm ring-1 ring-gray-100 flex flex-col gap-3">
-                                            <div className="flex justify-between items-start">
-                                                <Skeleton className="w-10 h-10 rounded-xl" />
-                                                <Skeleton className="w-16 h-6 rounded-lg" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-5 w-3/4 rounded-md" />
-                                                <Skeleton className="h-4 w-1/2 rounded-md" />
-                                            </div>
-                                            <div className="pt-2 border-t border-gray-50 flex justify-between items-center">
-                                                <Skeleton className="h-6 w-24 rounded-md" />
-                                                <Skeleton className="h-8 w-8 rounded-full" />
-                                            </div>
-                                        </Card>
-                                    ))
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        {Array.from({ length: 6 }).map((_, i) => (
+                                            <Card key={i} className="p-4 rounded-[20px] bg-white border-none shadow-sm ring-1 ring-gray-100 flex flex-col gap-3">
+                                                <div className="flex justify-between items-start">
+                                                    <Skeleton className="w-10 h-10 rounded-xl" />
+                                                    <Skeleton className="w-16 h-6 rounded-lg" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Skeleton className="h-5 w-3/4 rounded-md" />
+                                                    <Skeleton className="h-4 w-1/2 rounded-md" />
+                                                </div>
+                                                <div className="pt-2 border-t border-gray-50 flex justify-between items-center">
+                                                    <Skeleton className="h-6 w-24 rounded-md" />
+                                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
                                 ) : (packages.upcoming.length > 0 || packages.completed.length > 0) ? (
                                     <div className="space-y-6">
                                         {packages.upcoming.length > 0 && (

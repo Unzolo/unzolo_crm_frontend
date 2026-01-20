@@ -446,7 +446,7 @@ function CreateTripPage() {
                         </div>
 
                         {/* Submit Button (Fixed) */}
-                        <div className="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 flex justify-center z-50 2xl:ml-[250px]">
+                        <div className="fixed bottom-0 left-0 lg:left-64 right-0 p-6 bg-white/80 backdrop-blur-md border-t border-gray-100 flex justify-center z-50">
                             <Button
                                 type="submit"
                                 disabled={createTripMutation.isPending}
