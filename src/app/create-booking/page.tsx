@@ -70,6 +70,8 @@ const createBookingSchema = z.object({
     paymentMethod: z.string().min(1, "Payment method is required"),
     paymentDate: z.date(),
     members: z.array(memberSchema).min(1, "At least one participant is required"),
+    memberCount: z.coerce.number().min(1).optional(),
+    preferredDate: z.date().optional(),
 });
 
 type CreateBookingValues = z.infer<typeof createBookingSchema>;
@@ -103,6 +105,7 @@ function CreateBookingPage() {
             paymentDate: new Date(),
             members: [{ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: true }],
             amount: 0,
+            memberCount: 1,
         },
     });
 
@@ -135,11 +138,17 @@ function CreateBookingPage() {
     const members = watch("members");
     const customAmount = watch("amount");
 
+    const memberCountValue = watch("memberCount");
+
     useEffect(() => {
         if (trip) {
-            const memberCount = members.length;
-            const fullPrice = parseFloat(trip.price) * memberCount;
-            const advancePrice = parseFloat(trip.advanceAmount) * memberCount;
+            let count = members.length;
+            if (trip.type === 'package' && memberCountValue) {
+                count = Number(memberCountValue);
+            }
+
+            const fullPrice = parseFloat(trip.price) * count;
+            const advancePrice = parseFloat(trip.advanceAmount) * count;
 
             if (paymentType === "full") {
                 setValue("amount", fullPrice);
@@ -147,7 +156,7 @@ function CreateBookingPage() {
                 setValue("amount", advancePrice);
             }
         }
-    }, [trip, paymentType, members.length, setValue]);
+    }, [trip, paymentType, members.length, memberCountValue, setValue]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -183,6 +192,16 @@ function CreateBookingPage() {
             formData.append("paymentType", data.paymentType);
             formData.append("paymentMethod", data.paymentMethod);
             formData.append("paymentDate", data.paymentDate.toISOString());
+
+            // Handle Type Specific Data
+            if (trip?.type === 'package') {
+                if (data.memberCount) formData.append("memberCount", data.memberCount.toString());
+                if (data.preferredDate) formData.append("preferredDate", data.preferredDate.toISOString());
+            } else {
+                // For camps, member count is the number of participants
+                formData.append("memberCount", data.members.length.toString());
+            }
+
             const cleanedMembers = data.members.map((member) => ({
                 ...member,
                 contactNumber: member.contactNumber === "" ? undefined : member.contactNumber,
@@ -251,40 +270,75 @@ function CreateBookingPage() {
                         <h2 className="text-lg font-bold text-black ">Participants</h2>
                     </div>
 
-                    {/* Participants Count Card */}
-                    <Card className="p-4 border-none shadow-none bg-[#219653]/5 rounded-2xl flex flex-row justify-between mb-8">
-                        <div className="flex items-center gap-4 ">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                                <Users className="w-6 h-6 text-[#219653]" />
+                    {/* Participants Count Card - Only for Camps */}
+                    {trip?.type !== 'package' && (
+                        <Card className="p-4 border-none shadow-none bg-[#219653]/5 rounded-2xl flex flex-row justify-between mb-8">
+                            <div className="flex items-center gap-4 ">
+                                <div className="w-8 h-8 rounded-full flex items-center justify-center">
+                                    <Users className="w-6 h-6 text-[#219653]" />
+                                </div>
+                                <span className="text-sm font-medium text-gray-700">Participants Count</span>
                             </div>
-                            <span className="text-sm font-medium text-gray-700">Participants Count</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
-                                onClick={() => {
-                                    if (fields.length > 1) remove(fields.length - 1);
-                                }}
-                                disabled={fields.length <= 1}
-                            >
-                                <Minus className="w-4 h-4" />
-                            </Button>
-                            <span className=" font-bold text-black min-w-[20px] text-center">{fields.length}</span>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
-                                onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
-                            >
-                                <Plus className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    </Card>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
+                                    onClick={() => {
+                                        if (fields.length > 1) remove(fields.length - 1);
+                                    }}
+                                    disabled={fields.length <= 1}
+                                >
+                                    <Minus className="w-4 h-4" />
+                                </Button>
+                                <span className=" font-bold text-black min-w-[20px] text-center">{fields.length}</span>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
+                                    onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </Card>
+                    )}
 
                     <form id="booking-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-32">
-                        {fields.map((field, index) => (
+                        {/* Package Specific Fields */}
+                        {trip?.type === 'package' && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-black ml-1">Preferred Date</label>
+                                    <Controller
+                                        control={control}
+                                        name="preferredDate"
+                                        render={({ field }) => (
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" className={cn("w-full h-12 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]", !field.value && "text-muted-foreground")}>
+                                                        <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
+                                                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="rounded-xl border-[#E2F1E8]" />
+                                                </PopoverContent>
+                                            </Popover>
+                                        )}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-black ml-1">Total Members</label>
+                                    <div className="relative">
+                                        <Input {...register("memberCount")} type="number" placeholder="Count" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
+                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {(trip?.type === 'package' ? fields.slice(0, 1) : fields).map((field, index) => (
                             <Card key={field.id} className="p-3 border-none bg-[#219653]/5 rounded-[24px] space-y-0 relative">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
@@ -298,7 +352,7 @@ function CreateBookingPage() {
                                             {index === 0 ? "Primary Contact" : `Participant ${index + 1}`}
                                         </h3>
                                     </div>
-                                    {index > 0 && (
+                                    {index > 0 && trip?.type !== 'package' && (
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -374,14 +428,16 @@ function CreateBookingPage() {
                             </Card>
                         ))}
 
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full h-16 rounded-2xl border-2 border-dashed border-[#219653] text-[#219653] font-bold text-lg hover:bg-[#F5F9F7] bg-white gap-2"
-                            onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
-                        >
-                            <Plus className="w-6 h-6" /> Add Participant
-                        </Button>
+                        {trip?.type !== 'package' && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full h-16 rounded-2xl border-2 border-dashed border-[#219653] text-[#219653] font-bold text-lg hover:bg-[#F5F9F7] bg-white gap-2"
+                                onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
+                            >
+                                <Plus className="w-6 h-6" /> Add Participant
+                            </Button>
+                        )}
                     </form>
                 </div>
 

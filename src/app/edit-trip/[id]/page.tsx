@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, IndianRupee, Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, IndianRupee, Calendar as CalendarIcon, Loader2, Tent, Package, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter, useParams } from "next/navigation";
@@ -20,24 +20,78 @@ import * as z from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const PACKAGE_CATEGORIES = [
+    { value: "budget_friendly", label: "Budget Friendly" },
+    { value: "heritage_culture", label: "Heritage & Culture" },
+    { value: "spiritual", label: "Spiritual" },
+    { value: "international", label: "International Packages" },
+    { value: "honeymoon", label: "Honeymoon" },
+    { value: "group_trips", label: "Group Trips" },
+];
 
 const editTripSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
     destination: z.string().min(2, "Destination must be at least 2 characters"),
-    startDate: z.date({
-        required_error: "Start date is required",
-    } as any),
-    endDate: z.date({
-        required_error: "End date is required",
-    } as any),
+    type: z.enum(["camp", "package"]),
+    // Camp Specific
+    startDate: z.date().optional(),
+    endDate: z.date().optional(),
+    // Package Specific
+    groupSize: z.string().optional(),
+    category: z.string().optional(),
+    // Common
     price: z.coerce.number().min(1, "Price must be at least 1"),
     advanceAmount: z.coerce.number().min(0, "Advance amount cannot be negative"),
-    type: z.enum(["camp", "package"]),
-})
-    .refine((data) => data.endDate >= data.startDate, {
-        message: "End date must be after start date",
-        path: ["endDate"],
-    });
+}).superRefine((data, ctx) => {
+    if (data.type === "camp") {
+        if (!data.startDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Start date is required for camps",
+                path: ["startDate"],
+            });
+        }
+        if (!data.endDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "End date is required for camps",
+                path: ["endDate"],
+            });
+        }
+        if (data.startDate && data.endDate && data.endDate < data.startDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "End date must be after start date",
+                path: ["endDate"],
+            });
+        }
+    }
+    if (data.type === "package") {
+        if (!data.groupSize) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Group size is required for packages",
+                path: ["groupSize"],
+            });
+        }
+        if (!data.category) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Category is required for packages",
+                path: ["category"],
+            });
+        }
+    }
+});
 
 type EditTripValues = z.infer<typeof editTripSchema>;
 
@@ -52,10 +106,14 @@ function EditTripPage() {
         handleSubmit,
         control,
         reset,
+        setValue,
+        watch,
         formState: { errors },
     } = useForm<EditTripValues>({
         resolver: zodResolver(editTripSchema) as any,
     });
+
+    const tripType = watch("type");
 
     const { data: tripResponse, isLoading: isFetching } = useQuery({
         queryKey: ["trip", tripId],
@@ -72,11 +130,13 @@ function EditTripPage() {
             reset({
                 title: trip.title,
                 destination: trip.destination,
-                startDate: new Date(trip.startDate),
-                endDate: new Date(trip.endDate),
+                startDate: trip.startDate ? new Date(trip.startDate) : undefined,
+                endDate: trip.endDate ? new Date(trip.endDate) : undefined,
                 price: parseFloat(trip.price),
                 advanceAmount: parseFloat(trip.advanceAmount),
                 type: trip.type,
+                groupSize: trip.groupSize || "",
+                category: trip.category || "",
             });
         }
     }, [tripResponse, reset]);
@@ -85,8 +145,8 @@ function EditTripPage() {
         mutationFn: async (values: EditTripValues) => {
             const formattedValues = {
                 ...values,
-                startDate: format(values.startDate, "yyyy-MM-dd"),
-                endDate: format(values.endDate, "yyyy-MM-dd"),
+                startDate: values.startDate ? format(values.startDate, "yyyy-MM-dd") : undefined,
+                endDate: values.endDate ? format(values.endDate, "yyyy-MM-dd") : undefined,
             };
             const response = await apiWithOffline.patch(`/trips/${tripId}`, formattedValues);
             return response.data;
@@ -137,7 +197,38 @@ function EditTripPage() {
 
             {/* Main Content */}
             <div className="flex-1 bg-white rounded-t-[30px] p-4 shadow-2xl overflow-y-auto">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-24 2xl:max-w-3xl 2xl:mx-auto">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pb-24 xl:max-w-3xl mx-auto">
+                    {/* Trip Type */}
+                    <div className="space-y-1">
+                        <label className="text-sm font-medium text-[#219653] ml-1">Trip Type</label>
+                        <Tabs
+                            value={tripType}
+                            onValueChange={(val) => setValue("type", val as "camp" | "package")}
+                            className="w-full"
+                        >
+                            <TabsList className="w-full h-14 bg-gray-50 border border-[#E2F1E8] rounded-xl p-1">
+                                <TabsTrigger
+                                    value="camp"
+                                    className="flex-1 h-full rounded-lg data-[state=active]:bg-[#219653] data-[state=active]:text-white transition-all font-bold mt-0"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Tent className="w-4 h-4" />
+                                        Camp
+                                    </div>
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="package"
+                                    className="flex-1 h-full rounded-lg data-[state=active]:bg-[#219653] data-[state=active]:text-white transition-all font-bold mt-0"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Package className="w-4 h-4" />
+                                        Package
+                                    </div>
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+
                     {/* Trip Title */}
                     <div className="space-y-1">
                         <label className="text-sm font-medium text-[#219653] ml-1">Trip Title</label>
@@ -145,7 +236,7 @@ function EditTripPage() {
                             {...register("title")}
                             placeholder="Magical Himachal"
                             className={cn(
-                                "h-14 mt-1 rounded-lg border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300",
+                                "h-14 mt-1 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300 shadow-none",
                                 errors.title && "border-red-500 focus-visible:ring-red-500"
                             )}
                         />
@@ -161,7 +252,7 @@ function EditTripPage() {
                             {...register("destination")}
                             placeholder="Munnar"
                             className={cn(
-                                "h-14 mt-1 rounded-lg border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300",
+                                "h-14 mt-1 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300 shadow-none",
                                 errors.destination && "border-red-500 focus-visible:ring-red-500"
                             )}
                         />
@@ -170,84 +261,135 @@ function EditTripPage() {
                         )}
                     </div>
 
-                    {/* Dates Row */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-[#219653] ml-1">Start Date</label>
-                            <Controller
-                                control={control}
-                                name="startDate"
-                                render={({ field }) => (
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full h-14 mt-1 justify-start text-left font-normal rounded-lg border-[#E2F1E8] focus:ring-1 focus:ring-[#219653] bg-white",
-                                                    !field.value && "text-gray-300",
-                                                    errors.startDate && "border-red-500"
-                                                )}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
-                                                {field.value ? format(field.value, "PPP") : <span>Select date</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={field.onChange}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                    {/* Camp Specific Dates */}
+                    {tripType === "camp" && (
+                        <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-300">
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-[#219653] ml-1">Start Date</label>
+                                <Controller
+                                    control={control}
+                                    name="startDate"
+                                    render={({ field }) => (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full h-14 mt-1 justify-start text-left font-normal rounded-xl border-[#E2F1E8] focus:ring-1 focus:ring-[#219653] bg-white shadow-none",
+                                                        !field.value && "text-gray-300",
+                                                        errors.startDate && "border-red-500"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
+                                                    {field.value ? format(field.value, "PPP") : <span>Select date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0 border-none shadow-2xl rounded-2xl" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                    className="rounded-2xl"
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                />
+                                {errors.startDate && (
+                                    <p className="text-[11px] text-red-500 ml-1">{errors.startDate.message}</p>
                                 )}
-                            />
-                            {errors.startDate && (
-                                <p className="text-[11px] text-red-500 ml-1">{errors.startDate.message}</p>
-                            )}
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-[#219653] ml-1">End Date</label>
-                            <Controller
-                                control={control}
-                                name="endDate"
-                                render={({ field }) => (
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full h-14 mt-1 justify-start text-left font-normal rounded-lg border-[#E2F1E8] focus:ring-1 focus:ring-[#219653] bg-white",
-                                                    !field.value && "text-gray-300",
-                                                    errors.endDate && "border-red-500"
-                                                )}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
-                                                {field.value ? format(field.value, "PPP") : <span>Select date</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={field.onChange}
-                                                initialFocus
-                                            />
-                                        </PopoverContent>
-                                    </Popover>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-[#219653] ml-1">End Date</label>
+                                <Controller
+                                    control={control}
+                                    name="endDate"
+                                    render={({ field }) => (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full h-14 mt-1 justify-start text-left font-normal rounded-xl border-[#E2F1E8] focus:ring-1 focus:ring-[#219653] bg-white shadow-none",
+                                                        !field.value && "text-gray-300",
+                                                        errors.endDate && "border-red-500"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
+                                                    {field.value ? format(field.value, "PPP") : <span>Select date</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0 border-none shadow-2xl rounded-2xl" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                    className="rounded-2xl"
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                />
+                                {errors.endDate && (
+                                    <p className="text-[11px] text-red-500 ml-1">{errors.endDate.message}</p>
                                 )}
-                            />
-                            {errors.endDate && (
-                                <p className="text-[11px] text-red-500 ml-1">{errors.endDate.message}</p>
-                            )}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Package Specific Fields */}
+                    {tripType === "package" && (
+                        <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-300">
+                            <div className="space-y-1 col-span-1">
+                                <label className="text-sm font-medium text-[#219653] ml-1">Group Size</label>
+                                <Input
+                                    {...register("groupSize")}
+                                    placeholder="2-4 people"
+                                    className={cn(
+                                        "h-14 mt-1 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300 shadow-none",
+                                        errors.groupSize && "border-red-500 focus-visible:ring-red-500"
+                                    )}
+                                />
+                                {errors.groupSize && (
+                                    <p className="text-[11px] text-red-500 ml-1">{errors.groupSize.message}</p>
+                                )}
+                            </div>
+                            <div className="space-y-1 col-span-1">
+                                <label className="text-sm font-medium text-[#219653] ml-1">Category</label>
+                                <Controller
+                                    control={control}
+                                    name="category"
+                                    render={({ field }) => (
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <SelectTrigger className={cn(
+                                                "h-14 mt-1 rounded-xl border-[#E2F1E8] focus:ring-[#219653] text-gray-700 shadow-none",
+                                                errors.category && "border-red-500"
+                                            )}>
+                                                <SelectValue placeholder="Select Category" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-none shadow-2xl">
+                                                {PACKAGE_CATEGORIES.map((cat) => (
+                                                    <SelectItem key={cat.value} value={cat.value}>
+                                                        {cat.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                />
+                                {errors.category && (
+                                    <p className="text-[11px] text-red-500 ml-1">{errors.category.message}</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Pricing Row */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-[#219653] ml-1">Total Price</label>
+                            <label className="text-sm font-medium text-[#219653] ml-1">{tripType === 'package' ? 'Starting From' : 'Total Price'}</label>
                             <div className="relative mt-1">
                                 <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#219653]" />
                                 <Input
@@ -255,7 +397,7 @@ function EditTripPage() {
                                     type="number"
                                     placeholder="Amount"
                                     className={cn(
-                                        "h-14 pl-10 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300",
+                                        "h-14 pl-10 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300 shadow-none",
                                         errors.price && "border-red-500 focus-visible:ring-red-500"
                                     )}
                                 />
@@ -273,7 +415,7 @@ function EditTripPage() {
                                     type="number"
                                     placeholder="1000"
                                     className={cn(
-                                        "h-14 pl-10 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300",
+                                        "h-14 pl-10 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300 shadow-none",
                                         errors.advanceAmount && "border-red-500 focus-visible:ring-red-500"
                                     )}
                                 />

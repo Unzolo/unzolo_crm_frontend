@@ -8,8 +8,20 @@ import {
     Calendar,
     Pencil,
     Loader2,
-    Trash2
+    Trash2,
+    Tent,
+    Package,
+    Tag
 } from "lucide-react";
+
+const CATEGORY_LABELS: Record<string, string> = {
+    budget_friendly: "Budget Friendly",
+    heritage_culture: "Heritage & Culture",
+    spiritual: "Spiritual",
+    international: "International",
+    honeymoon: "Honeymoon",
+    group_trips: "Group Trips",
+};
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -282,24 +294,42 @@ function TripCard({ trip, onClick, onEdit, onDelete }: { trip: any, onClick: () 
     return (
         <Card
             onClick={onClick}
-            className="p-2.5 px-3 rounded-[16px] shadow-none border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md hover:ring-[#219653]/30 transition-all cursor-pointer group active:scale-[0.99] space-y-1.5"
+            className="p-2.5 px-3 rounded-[16px] shadow-none border-[1px] ring-1 ring-gray-100 hover:shadow-md hover:ring-[#219653]/30 transition-all cursor-pointer group active:scale-[0.99] space-y-1.5"
         >
             <div className="flex justify-between items-start ">
-                <div className="min-w-0 flex-1 pr-2">
-                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                <div className="min-w-0 flex-1 pr-2 flex flex-row gap-3 items-center">
+                    <div className="w-10 h-10 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0 group-hover:bg-[#219653] transition-colors">
+                        {trip.type === "package" ? (
+                            <Package className="w-5 h-5 text-[#219653] group-hover:text-white transition-colors" />
+                        ) : (
+                            <Tent className="w-5 h-5 text-[#219653] group-hover:text-white transition-colors" />
+                        )}
+                    </div>
+                    <div className="flex flex-col min-w-0">
                         <h3 className="text-sm font-bold text-black group-hover:text-[#219653] transition-colors truncate">
                             {trip.title}
                         </h3>
-                        <div className="flex items-center gap-1 shrink-0 bg-[#E2F1E8]/30 px-2 py-0.5 rounded-md">
-                            <Calendar className="w-2.5 h-2.5 text-[#219653]" />
-                            <span className="text-[9px] font-bold text-[#219653]">
-                                {formatTripDate(trip.startDate, trip.endDate)}
-                            </span>
+                        <div className="flex items-center gap-1 mt-0.5">
+                            {trip.type === "package" ? (
+                                <>
+                                    <Tag className="w-3 h-3 text-gray-400" />
+                                    <span className="text-[11px] font-medium text-gray-500 truncate max-w-[150px]">
+                                        {CATEGORY_LABELS[trip.category] || trip.category || "Package"}
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    <Calendar className="w-3 h-3 text-gray-400" />
+                                    <span className="text-[11px] font-medium text-gray-500">
+                                        {formatTripDate(trip.startDate, trip.endDate)}
+                                    </span>
+                                </>
+                            )}
                         </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-2">
-                        <MapPin className="w-3 h-3 text-gray-400" />
-                        <span className="text-[12px] text-gray-400 font-medium truncate">{trip.destination}</span>
+                        <div className="flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 text-gray-400" />
+                            <span className="text-[11px] text-gray-400 font-medium truncate">{trip.destination}</span>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -319,7 +349,9 @@ function TripCard({ trip, onClick, onEdit, onDelete }: { trip: any, onClick: () 
 
             <div className="flex items-center justify-between -mt-3">
                 <div className="text-left">
-                    <span className="text-[9px] text-gray-400 font-bold uppercase block -mb-0.5 tracking-wider">Total Price</span>
+                    <span className="text-[9px] text-gray-400 font-bold uppercase block -mb-0.5 tracking-wider">
+                        {trip.type === "package" ? "From Price" : "Total Price"}
+                    </span>
                     <span className="text-sm font-extrabold text-[#219653]">₹{parseFloat(trip.price).toLocaleString()}</span>
                 </div>
             </div>

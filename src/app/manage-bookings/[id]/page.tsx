@@ -79,29 +79,33 @@ function ManageBookingPage() {
     const stats = [
         {
             type: "simple",
-            label: "Total Members",
-            value: totalMembers.toString(),
-            icon: <Users className="w-5 h-5 text-[#219653]" />,
-            color: "text-black"
+            label: "Confirmed Slots",
+            value: (summary?.totalCustomers || 0).toString(),
+            icon: <Users className="w-5 h-5 text-blue-600" />,
+            color: "text-black",
+            bgColor: "bg-blue-50/50"
         },
         {
             type: "split",
-            left: { label: "Adv Paid", value: summary?.advancePaidCustomers?.toString() || "0", color: "text-orange-400" },
-            right: { label: "Full Paid", value: summary?.fullyPaidCustomers?.toString() || "0", color: "text-[#219653]" }
+            left: { label: "Adv Paid", value: summary?.advancePaidCustomers?.toString() || "0", color: "text-orange-500" },
+            right: { label: "Full Paid", value: summary?.fullyPaidCustomers?.toString() || "0", color: "text-green-600" },
+            bgColor: "bg-gray-50/50"
         },
         {
             type: "simple",
-            label: "Total Collected",
+            label: "Revenue Collected",
             value: `₹${summary?.totalCollected?.toLocaleString() || "0"}`,
-            icon: <ClipboardCheck className="w-5 h-5 text-[#219653]" />,
-            color: "text-[#219653]"
+            icon: <ClipboardCheck className="w-5 h-5 text-green-600" />,
+            color: "text-green-600",
+            bgColor: "bg-green-50/50"
         },
         {
             type: "simple",
-            label: "Total Pending",
+            label: "Outstanding Dues",
             value: `₹${summary?.totalPending?.toLocaleString() || "0"}`,
-            icon: <IndianRupee className="w-5 h-5 text-[#219653]" />,
-            color: "text-red-600"
+            icon: <Clock className="w-5 h-5 text-red-500" />,
+            color: "text-red-600",
+            bgColor: "bg-red-50/50"
         },
     ];
 
@@ -222,20 +226,45 @@ function ManageBookingPage() {
                             {isStatsExpanded ? <ChevronUp className="w-5 h-5 text-[#219653]" /> : <ChevronDown className="w-5 h-5" />}
                         </button>
                         <h2 className="text-lg font-semibold text-black mb-1 pr-16 truncate">{trip?.title || "Loading..."}</h2>
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2">
                             <MapPin className="w-4 h-4 text-gray-400" />
                             <span className="text-xs text-gray-400 font-medium">{trip?.destination || "..."}</span>
                             <span className="text-xs text-gray-300">|</span>
                             <span className="text-xs text-gray-400 font-bold">{bookings.length} Bookings</span>
+                            {trip?.type === 'package' && trip?.category && (
+                                <>
+                                    <span className="text-xs text-gray-300">|</span>
+                                    <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-none capitalize px-2 py-0">
+                                        {trip.category.replace(/_/g, ' ')}
+                                    </Badge>
+                                </>
+                            )}
+                            {trip?.type === 'package' && trip?.groupSize && (
+                                <>
+                                    <span className="text-xs text-gray-300">|</span>
+                                    <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                                        <Users className="w-3 h-3 text-[#219653]" /> {trip.groupSize}
+                                    </span>
+                                </>
+                            )}
                         </div>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Calendar className="w-4 h-4 text-[#219653]" />
                                 <span className="text-sm font-bold text-[#219653]">
-                                    {trip ? `${format(new Date(trip.startDate), "MMM dd")} - ${format(new Date(trip.endDate), "dd, yyyy")}` : "..."}
+                                    {trip ? (
+                                        trip.type === 'package' ? (
+                                            (trip.startDate && trip.endDate)
+                                                ? `${format(new Date(trip.startDate), "MMM dd")} - ${format(new Date(trip.endDate), "dd, yyyy")}`
+                                                : "Flexible Dates"
+                                        ) : `${format(new Date(trip.startDate), "MMM dd")} - ${format(new Date(trip.endDate), "dd, yyyy")}`
+                                    ) : "..."}
                                 </span>
                             </div>
-                            <span className="text-sm font-bold text-[#219653]">₹{parseFloat(trip?.price || "0").toLocaleString()}</span>
+                            <div className="text-right">
+                                {trip?.type === 'package' && <p className="text-[10px] text-gray-400 font-bold uppercase leading-none mb-1">Starting From</p>}
+                                <span className="text-sm font-bold text-[#219653]">₹{parseFloat(trip?.price || "0").toLocaleString()}</span>
+                            </div>
                         </div>
                     </Card>
 
@@ -251,28 +280,28 @@ function ManageBookingPage() {
                                 {stats.map((stat, index) => {
                                     if (stat.type === "split") {
                                         return (
-                                            <Card key={index} className="p-4 border-none shadow-sm rounded-2xl bg-white ring-1 ring-gray-50 flex flex-row items-center justify-between col-span-1">
+                                            <Card key={index} className={cn("p-4 border-none shadow-sm rounded-2xl ring-1 ring-gray-100/50 flex flex-row items-center justify-between col-span-1", (stat as any).bgColor)}>
                                                 <div className="flex-1 flex flex-col items-center justify-center text-center">
-                                                    <span className="text-[12px] text-black font-medium leading-tight mb-2 whitespace-nowrap">{stat.left?.label}</span>
+                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-2 whitespace-nowrap">{stat.left?.label}</span>
                                                     <span className={`text-lg font-bold leading-tight ${stat.left?.color}`}>{stat.left?.value}</span>
                                                 </div>
-                                                <div className="w-px h-10 bg-gray-100 shrink-0" />
+                                                <div className="w-px h-10 bg-gray-200/50 shrink-0" />
                                                 <div className="flex-1 flex flex-col items-center justify-center text-center">
-                                                    <span className="text-[12px] text-black font-medium leading-tight mb-2 whitespace-nowrap">{stat.right?.label}</span>
+                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-2 whitespace-nowrap">{stat.right?.label}</span>
                                                     <span className={`text-lg font-bold leading-tight ${stat.right?.color}`}>{stat.right?.value}</span>
                                                 </div>
                                             </Card>
                                         );
                                     }
                                     return (
-                                        <Card key={index} className="p-4 border-none shadow-sm rounded-2xl bg-white ring-1 ring-gray-50 flex flex-row gap-3">
+                                        <Card key={index} className={cn("p-4 border-none shadow-sm rounded-2xl ring-1 ring-gray-100/50 flex flex-row gap-3", (stat as any).bgColor)}>
                                             {stat.icon && (
-                                                <div className="w-9 h-9 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
+                                                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm">
                                                     <div className="scale-90">{stat.icon}</div>
                                                 </div>
                                             )}
                                             <div className="flex flex-col gap-1">
-                                                <span className="text-[12px] text-gray-500 font-medium leading-tight mb-0.5">{stat.label}</span>
+                                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-0.5">{stat.label}</span>
                                                 <span className={`text-base font-bold leading-tight ${stat.color}`}>{stat.value}</span>
                                             </div>
                                         </Card>
@@ -388,8 +417,8 @@ function ManageBookingPage() {
                                 const primaryCustomer = booking.Customers?.find((c: any) => c.isPrimary) || booking.Customers?.[0];
                                 const paidAmount = parseFloat(booking.netPaidAmount || booking.paidAmount || "0");
                                 const totalAmount = parseFloat(booking.totalCost || booking.amount || "0");
-                                const activeMemberCount = booking.Customers?.filter((c: any) => c.status !== 'cancelled').length || booking.memberCount || 0;
-                                const totalMemberCount = booking.Customers?.length || booking.memberCount || 0;
+                                const activeMemberCount = booking.activeMemberCount ?? (booking.Customers?.filter((c: any) => c.status !== 'cancelled').length || 0);
+                                const totalMemberCount = booking.memberCount || booking.Customers?.length || 0;
                                 const advanceAmount = parseFloat(trip?.advanceAmount || "0") * totalMemberCount;
 
                                 const calculatedRefund = booking.Payments?.filter((p: any) => p.paymentType === 'refund').reduce((acc: number, curr: any) => acc + parseFloat(curr.amount || 0), 0) || 0;
@@ -410,10 +439,13 @@ function ManageBookingPage() {
                                                 isCancelled ? "bg-red-50/30 border-red-100" : "bg-white border-[#219653]/10"
                                         )}
                                     >
+                                        <Badge className={`absolute top-0 left-0 border-none shadow-none text-[8px] px-2 py-1 rounded-none rounded-br-xl font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount)}`}>
+                                            {getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount)}
+                                        </Badge>
                                         <span className="absolute top-1.5 right-3 text-[9px] text-gray-400 font-medium flex items-center gap-1">
                                             <Clock className="w-2.5 h-2.5" /> {format(new Date(booking.bookingDate), "dd MMM, yyyy h:mm a")}
                                         </span>
-                                        <div className="flex items-start gap-3 mt-1">
+                                        <div className="flex items-start gap-3 mt-3">
                                             <div className={cn(
                                                 "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
                                                 isPartialCancelled ? "bg-orange-100" :
@@ -431,17 +463,19 @@ function ManageBookingPage() {
                                                 </h3>
                                                 <div className="flex items-center gap-3 mt-1.5 text-[10px] text-gray-400 font-medium mb-1">
                                                     <span className="flex items-center gap-1">
-                                                        <Users className="w-3 h-3" /> {activeMemberCount} members
+                                                        <Users className="w-3 h-3" /> {activeMemberCount} Adults
                                                     </span>
+                                                    {trip?.type === 'package' && booking.preferredDate && (
+                                                        <span className="flex items-center gap-1 text-[#219653] font-bold">
+                                                            <Calendar className="w-3 h-3" /> {format(new Date(booking.preferredDate), "dd MMM")}
+                                                        </span>
+                                                    )}
                                                     {!isCancelled && !isPartialCancelled ? (
                                                         <span className="flex items-center gap-1 text-[12px]">
                                                             <span className="text-gray-400">₹{paidAmount.toLocaleString()}</span>/
                                                             <span className="text-[#219653]">₹{totalAmount.toLocaleString()}</span>
                                                         </span>
                                                     ) : null}
-                                                    <Badge className={`border-none shadow-none text-[8px] px-2 py-0.5 rounded-md font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount)}`}>
-                                                        {getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount)}
-                                                    </Badge>
                                                 </div>
                                             </div>
                                         </div>

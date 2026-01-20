@@ -204,8 +204,14 @@ function BookingDetailsPage() {
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-gray-400 font-medium mt-1">
                                 <Calendar className="w-4 h-4" />
-                                {booking.Trip?.startDate && format(new Date(booking.Trip.startDate), "do MMM")}
-                                {booking.Trip?.endDate && ` - ${format(new Date(booking.Trip.endDate), "do MMM")}`}
+                                {booking.Trip?.type === 'package' ? (
+                                    booking.preferredDate ? `Preferred: ${format(new Date(booking.preferredDate), "do MMM, yyyy")}` : "Flexible Dates"
+                                ) : (
+                                    <>
+                                        {booking.Trip?.startDate && format(new Date(booking.Trip.startDate), "do MMM")}
+                                        {booking.Trip?.endDate && ` - ${format(new Date(booking.Trip.endDate), "do MMM")}`}
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="text-right">
@@ -250,6 +256,21 @@ function BookingDetailsPage() {
                                     </div>
                                 </Card>
                             ))}
+                            {booking.Trip?.type === 'package' && (booking.totalMemberCount || booking.memberCount || 0) > (booking.Customers?.length || 0) && (
+                                <Card className="p-4 rounded-2xl flex flex-row justify-between shadow-none bg-gray-50/30 border-dashed border-2 border-gray-100">
+                                    <div className="flex flex-row gap-3 items-center">
+                                        <div className="w-9 h-9 rounded-full bg-white/50 flex items-center justify-center">
+                                            <Users className="w-5 h-5 text-gray-300" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-400">
+                                                + {(booking.totalMemberCount || booking.memberCount || 0) - (booking.Customers?.length || 0)} Other Members
+                                            </p>
+                                            <p className="text-[10px] text-gray-300 font-medium uppercase tracking-tight">Unnamed Participants</p>
+                                        </div>
+                                    </div>
+                                </Card>
+                            )}
                         </div>
                     </div>
 
@@ -404,7 +425,7 @@ function BookingDetailsPage() {
 
                         <div className="mb-6">
                             <h3 className=" text-black font-semibold">{booking.Trip?.title}</h3>
-                            <p className="text-xs text-gray-400 font-bold">Participants : {booking.Customers?.length} Adults</p>
+                            <p className="text-xs text-gray-400 font-bold">Participants : {booking.activeMemberCount || booking.totalMemberCount || booking.Customers?.length} Adults</p>
                         </div>
 
                         <div className="space-y-4 mb-8">
