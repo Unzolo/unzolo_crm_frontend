@@ -390,7 +390,7 @@ function ManageBookingPage() {
                                                     sortOrder === "asc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
                                                 )}
                                             >
-                                                Asc
+                                                {sortBy === "date" ? "Oldest" : "Asc"}
                                             </Button>
                                             <Button
                                                 variant="ghost"
@@ -401,7 +401,7 @@ function ManageBookingPage() {
                                                     sortOrder === "desc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600"
                                                 )}
                                             >
-                                                Desc
+                                                {sortBy === "date" ? "Latest" : "Desc"}
                                             </Button>
                                         </div>
                                     </div>

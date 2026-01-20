@@ -72,6 +72,12 @@ function SelectTripPage() {
 
     const allTrips = tripsResponse?.data || [];
 
+    const isTripCompleted = (trip: any) => {
+        if (!trip.endDate && !trip.startDate) return false;
+        const compareDate = trip.endDate || trip.startDate;
+        return new Date(compareDate) < new Date(new Date().setHours(0, 0, 0, 0));
+    };
+
     const processTrips = (trips: any[]) => {
         return trips
             .filter((trip) => {
@@ -84,7 +90,9 @@ function SelectTripPage() {
             .sort((a, b) => {
                 let comparison = 0;
                 if (sortBy === "date") {
-                    comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+                    const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+                    const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+                    comparison = dateA - dateB;
                 } else if (sortBy === "price") {
                     comparison = parseFloat(a.price) - parseFloat(b.price);
                 } else if (sortBy === "title") {
@@ -94,8 +102,23 @@ function SelectTripPage() {
             });
     };
 
-    const camps = useMemo(() => processTrips(allTrips.filter((t: any) => t.type === "camp")), [allTrips, searchQuery, sortBy, sortOrder]);
-    const packages = useMemo(() => processTrips(allTrips.filter((t: any) => t.type === "package")), [allTrips, searchQuery, sortBy, sortOrder]);
+    const camps = useMemo(() => {
+        const filtered = allTrips.filter((t: any) => t.type === "camp");
+        const processed = processTrips(filtered);
+        return {
+            upcoming: processed.filter(t => !isTripCompleted(t)),
+            completed: processed.filter(t => isTripCompleted(t))
+        };
+    }, [allTrips, searchQuery, sortBy, sortOrder]);
+
+    const packages = useMemo(() => {
+        const filtered = allTrips.filter((t: any) => t.type === "package");
+        const processed = processTrips(filtered);
+        return {
+            upcoming: processed.filter(t => !isTripCompleted(t)),
+            completed: processed.filter(t => isTripCompleted(t))
+        };
+    }, [allTrips, searchQuery, sortBy, sortOrder]);
 
     const formatTripDate = (start: string, end: string) => {
         try {
@@ -194,7 +217,7 @@ function SelectTripPage() {
                                                         sortOrder === "asc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
                                                     )}
                                                 >
-                                                    Asc
+                                                    {sortBy === "date" ? "Oldest" : "Asc"}
                                                 </button>
                                                 <button
                                                     onClick={() => setSortOrder("desc")}
@@ -203,7 +226,7 @@ function SelectTripPage() {
                                                         sortOrder === "desc" ? "bg-[#E2F1E8] text-[#219653] font-bold" : "text-gray-600 hover:bg-gray-50"
                                                     )}
                                                 >
-                                                    Desc
+                                                    {sortBy === "date" ? "Latest" : "Desc"}
                                                 </button>
                                             </div>
                                         </div>
@@ -219,13 +242,13 @@ function SelectTripPage() {
                                 value="camps"
                                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-bold"
                             >
-                                Camps ({camps.length})
+                                Camps ({camps.upcoming.length + camps.completed.length})
                             </TabsTrigger>
                             <TabsTrigger
                                 value="packages"
                                 className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-[#219653] text-gray-600 font-bold"
                             >
-                                Packages ({packages.length})
+                                Packages ({packages.upcoming.length + packages.completed.length})
                             </TabsTrigger>
                         </TabsList>
 
@@ -248,16 +271,41 @@ function SelectTripPage() {
                                             </div>
                                         </Card>
                                     ))
-                                ) : camps.length > 0 ? (
-                                    camps.map((trip: any) => (
-                                        <TripCard
-                                            key={trip._id || trip.id}
-                                            trip={trip}
-                                            onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
-                                            onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
-                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
-                                        />
-                                    ))
+                                ) : (camps.upcoming.length > 0 || camps.completed.length > 0) ? (
+                                    <div className="space-y-6">
+                                        {camps.upcoming.length > 0 && (
+                                            <div className="space-y-3">
+                                                <h3 className="text-sm font-bold text-gray-400 ml-1 uppercase tracking-wider">Upcoming Camps</h3>
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                                                    {camps.upcoming.map((trip: any) => (
+                                                        <TripCard
+                                                            key={trip._id || trip.id}
+                                                            trip={trip}
+                                                            onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
+                                                            onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
+                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {camps.completed.length > 0 && (
+                                            <div className="space-y-3">
+                                                <h3 className="text-sm font-bold text-gray-400 ml-1 uppercase tracking-wider">Completed Camps</h3>
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 opacity-75">
+                                                    {camps.completed.map((trip: any) => (
+                                                        <TripCard
+                                                            key={trip._id || trip.id}
+                                                            trip={trip}
+                                                            onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
+                                                            onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
+                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="text-center py-20 px-10">
                                         <p className="text-gray-400 font-medium">No camps found matching your search.</p>
@@ -283,16 +331,41 @@ function SelectTripPage() {
                                             </div>
                                         </Card>
                                     ))
-                                ) : packages.length > 0 ? (
-                                    packages.map((trip: any) => (
-                                        <TripCard
-                                            key={trip.id}
-                                            trip={trip}
-                                            onEdit={() => router.push(`/edit-trip/${trip.id}`)}
-                                            onDelete={() => deleteTripMutation.mutate(trip.id)}
-                                            onClick={() => router.push(`/manage-bookings/${trip.id}`)}
-                                        />
-                                    ))
+                                ) : (packages.upcoming.length > 0 || packages.completed.length > 0) ? (
+                                    <div className="space-y-6">
+                                        {packages.upcoming.length > 0 && (
+                                            <div className="space-y-3">
+                                                <h3 className="text-sm font-bold text-gray-400 ml-1 uppercase tracking-wider">Upcoming Packages</h3>
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                                                    {packages.upcoming.map((trip: any) => (
+                                                        <TripCard
+                                                            key={trip._id || trip.id}
+                                                            trip={trip}
+                                                            onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
+                                                            onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
+                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {packages.completed.length > 0 && (
+                                            <div className="space-y-3">
+                                                <h3 className="text-sm font-bold text-gray-400 ml-1 uppercase tracking-wider">Completed Packages</h3>
+                                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 opacity-75">
+                                                    {packages.completed.map((trip: any) => (
+                                                        <TripCard
+                                                            key={trip._id || trip.id}
+                                                            trip={trip}
+                                                            onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
+                                                            onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
+                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className="text-center py-20 px-10">
                                         <p className="text-gray-400 font-medium">No packages found matching your search.</p>
@@ -308,6 +381,8 @@ function SelectTripPage() {
 }
 
 function TripCard({ trip, onClick, onEdit, onDelete }: { trip: any, onClick: () => void, onEdit: () => void, onDelete: () => void }) {
+    const isCompleted = trip.endDate ? new Date(trip.endDate) < new Date(new Date().setHours(0, 0, 0, 0)) : (trip.startDate ? new Date(trip.startDate) < new Date(new Date().setHours(0, 0, 0, 0)) : false);
+
     const formatTripDate = (start: string, end: string) => {
         try {
             return `${format(new Date(start), "do MMM")} - ${format(new Date(end), "do MMM")}`;
@@ -319,8 +394,18 @@ function TripCard({ trip, onClick, onEdit, onDelete }: { trip: any, onClick: () 
     return (
         <Card
             onClick={onClick}
-            className="p-2.5 px-3 rounded-[16px] shadow-none border-[1px] ring-1 ring-gray-100 hover:shadow-md hover:ring-[#219653]/30 transition-all cursor-pointer group active:scale-[0.99] space-y-1.5"
+            className={cn(
+                "p-2.5 px-3 rounded-[16px] shadow-none border-[1px] ring-1 ring-gray-100 transition-all cursor-pointer group active:scale-[0.99] space-y-1.5 relative overflow-hidden",
+                isCompleted ? "bg-gray-50/50 hover:ring-gray-300" : "bg-white hover:shadow-md hover:ring-[#219653]/30"
+            )}
         >
+            {isCompleted && (
+                <div className="absolute top-0 right-0">
+                    <div className="bg-gray-400 text-white text-[8px] font-bold px-2 py-1 rounded-bl-lg uppercase tracking-tighter">
+                        Completed
+                    </div>
+                </div>
+            )}
             <div className="flex justify-between items-start ">
                 <div className="min-w-0 flex-1 pr-2 flex flex-row gap-3 items-center">
                     <div className="w-10 h-10 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0 group-hover:bg-[#219653] transition-colors">
