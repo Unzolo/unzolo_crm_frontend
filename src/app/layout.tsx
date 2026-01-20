@@ -5,6 +5,7 @@ import "./globals.css";
 const openSans = Open_Sans({
   variable: "--font-open-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +53,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${openSans.variable} font-sans antialiased`}
+        className={`${openSans.variable} ${openSans.className} antialiased`}
       >
         <QueryProvider>
           <OfflineProvider>

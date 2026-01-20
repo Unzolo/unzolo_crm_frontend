@@ -166,13 +166,13 @@ function DashboardPage() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {stats.map((stat, index) => (
-                <Card key={index} className="p-3 lg:p-4 border-none shadow-sm rounded-2xl flex flex-row gap-3 bg-white ring-1 ring-gray-50 hover:shadow-md transition-shadow">
-                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">
-                    {stat.icon}
+                <Card key={index} className="p-4 lg:p-6 border-none shadow-sm rounded-[24px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50 hover:shadow-md hover:ring-[#219653]/10 transition-all group">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0 group-hover:bg-[#219653]/10 transition-colors">
+                    <div className="group-hover:scale-110 transition-transform">{stat.icon}</div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[11px] lg:text-xs text-gray-500 font-medium">{stat.label}</span>
-                    <span className="text-lg lg:text-xl font-bold text-black">{stat.value}</span>
+                  <div className="flex flex-col justify-center">
+                    <span className="text-[10px] lg:text-xs text-gray-400 font-bold uppercase tracking-wider">{stat.label}</span>
+                    <span className="text-lg lg:text-2xl font-bold text-black tracking-tight">{stat.value}</span>
                   </div>
                 </Card>
               ))}
@@ -186,24 +186,23 @@ function DashboardPage() {
               <h2 className="text-lg lg:text-xl font-bold text-black">Quick Actions</h2>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6">
               {actions.map((action, index) => (
-                <Button
+                <Card
                   key={index}
-                  variant="ghost"
-                  className="w-full h-auto p-3 lg:p-4 py-4 lg:py-5 rounded-[20px] bg-[#E2F1E8] hover:bg-[#d5e9dc] flex flex-row items-center justify-start gap-3 lg:gap-4 border-none transition-all active:scale-[0.98]"
+                  className="p-4 lg:p-6 rounded-[24px] lg:rounded-[32px] bg-white flex flex-row items-center gap-4 lg:gap-6 border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98] group"
                   onClick={action.onClick}
                 >
-                  <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-full bg-[#219653] flex items-center justify-center shrink-0 shadow-sm">
-                    <div className="text-white">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#219653] flex items-center justify-center shrink-0 shadow-sm transition-transform ">
+                    <div className="text-[#219653]">
                       {action.icon}
                     </div>
                   </div>
-                  <div className="flex flex-col items-start text-left min-w-0">
-                    <span className="text-sm lg:text-base font-bold text-black leading-tight truncate w-full">{action.title}</span>
-                    <p className="text-[10px] lg:text-xs text-gray-500 font-medium mt-0.5 leading-tight line-clamp-2">{action.description}</p>
+                  <div className="flex flex-col items-start text-left min-w-0 flex-1">
+                    <span className="text-sm lg:text-lg font-bold text-black leading-tight truncate w-full group-hover:text-[#219653] transition-colors">{action.title}</span>
+                    <p className="text-[10px] lg:text-sm text-gray-500 font-medium mt-1 leading-tight line-clamp-2">{action.description}</p>
                   </div>
-                </Button>
+                </Card>
               ))}
             </div>
           </div>
