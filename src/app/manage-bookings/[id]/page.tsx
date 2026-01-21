@@ -94,7 +94,7 @@ function ManageBookingPage() {
         },
         {
             type: "simple",
-            label: "Revenue Collected",
+            label: "Total Collected",
             value: `₹${summary?.totalCollected?.toLocaleString() || "0"}`,
             icon: <ClipboardCheck className="w-5 h-5 text-green-600" />,
             color: "text-green-600",
@@ -102,7 +102,7 @@ function ManageBookingPage() {
         },
         {
             type: "simple",
-            label: "Outstanding Dues",
+            label: "Total Pending",
             value: `₹${summary?.totalPending?.toLocaleString() || "0"}`,
             icon: <Clock className="w-5 h-5 text-red-500" />,
             color: "text-red-600",
