@@ -49,7 +49,9 @@ export function Sidebar() {
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-gray-200">
             {/* Logo */}
             <div className="flex items-center justify-center h-16 px-6 border-b border-gray-200">
-                <h1 className="text-xl font-bold text-[#219653] truncate">CRM Portal</h1>
+                <h1 className="text-xl font-bold text-[#219653] truncate">
+                    {profile?.data?.name ? `${profile.data.name} CRM` : "CRM Portal"}
+                </h1>
             </div>
 
             {/* Navigation */}
