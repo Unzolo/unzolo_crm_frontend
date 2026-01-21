@@ -68,6 +68,16 @@ function DashboardPage() {
   const camps = allTrips.filter((t: any) => t.type === "camp");
   const packages = allTrips.filter((t: any) => t.type === "package");
 
+  const { data: profileResponse, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const response = await apiWithOffline.get("/auth/profile");
+      return response.data;
+    },
+  });
+
+  const userName = profileResponse?.data?.name || "Partner";
+
   const stats = [
     {
       label: "Total Trips Count",
@@ -111,7 +121,9 @@ function DashboardPage() {
       {/* Header - Mobile Only */}
       <div className="p-5 flex items-center justify-between lg:hidden">
         <div className="w-10" />
-        <h1 className="text-xl font-bold text-black flex-1 text-center font-sans tracking-tight">Koodam</h1>
+        <h1 className="text-xl font-bold text-black flex-1 text-center font-sans tracking-tight">
+          {profileLoading ? <Skeleton className="h-6 w-32 mx-auto" /> : `${userName} CRM`}
+        </h1>
 
         <Popover>
           <PopoverTrigger asChild>
@@ -151,7 +163,7 @@ function DashboardPage() {
       <div className="hidden lg:block p-6 bg-white border-b border-gray-200">
         <div className="max-w-5xl mx-auto">
           <h1 className="text-3xl font-bold text-black">Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Welcome back! Here's your overview</p>
+          <p className="text-sm text-gray-500 mt-1">Welcome back, {profileLoading ? "..." : userName}! Here's your overview</p>
         </div>
       </div>
 
