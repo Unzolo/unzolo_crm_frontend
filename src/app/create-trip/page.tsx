@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
@@ -123,10 +123,60 @@ function CreateTripPage() {
             type: "camp",
             groupSize: "",
             category: "",
+            advanceAmount: 0,
         }
     });
 
     const tripType = watch("type");
+    const [placeholder, setPlaceholder] = useState("Magical Himachal");
+    const packagePlaceholders = [
+        "Munnar couple package",
+        "Manali group package",
+        "Kerala family tour",
+        "Dubai adventure trip",
+        "Vietnam budget travel",
+    ];
+
+    useEffect(() => {
+        if (tripType !== "package") {
+            setPlaceholder("Magical Himachal");
+            return;
+        }
+
+        let currentIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let timeoutId: any;
+
+        const type = () => {
+            const currentString = packagePlaceholders[currentIndex];
+
+            if (isDeleting) {
+                setPlaceholder(currentString.substring(0, charIndex - 1));
+                charIndex--;
+            } else {
+                setPlaceholder(currentString.substring(0, charIndex + 1));
+                charIndex++;
+            }
+
+            let typeSpeed = isDeleting ? 30 : 50;
+
+            if (!isDeleting && charIndex === currentString.length) {
+                isDeleting = true;
+                typeSpeed = 2000; // Pause at end
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                currentIndex = (currentIndex + 1) % packagePlaceholders.length;
+                typeSpeed = 500;
+            }
+
+            timeoutId = setTimeout(type, typeSpeed);
+        };
+
+        type();
+
+        return () => clearTimeout(timeoutId);
+    }, [tripType]);
 
     const createTripMutation = useMutation({
         mutationFn: async (values: CreateTripValues) => {
@@ -262,7 +312,7 @@ function CreateTripPage() {
                             <label className="text-sm font-medium text-[#219653] ml-1">Trip Title</label>
                             <Input
                                 {...register("title")}
-                                placeholder="Magical Himachal"
+                                placeholder={placeholder}
                                 className={cn(
                                     "h-14 mt-1 rounded-lg border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300",
                                     errors.title && "border-red-500 focus-visible:ring-red-500"
@@ -425,24 +475,26 @@ function CreateTripPage() {
                                     <p className="text-[11px] text-red-500 ml-1">{errors.price.message}</p>
                                 )}
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-sm font-medium text-[#219653] ml-1">Advance Amount</label>
-                                <div className="relative mt-1">
-                                    <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#219653]" />
-                                    <Input
-                                        {...register("advanceAmount")}
-                                        type="number"
-                                        placeholder="1000"
-                                        className={cn(
-                                            "h-14 pl-10 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300",
-                                            errors.advanceAmount && "border-red-500 focus-visible:ring-red-500"
-                                        )}
-                                    />
+                            {tripType !== "package" && (
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-[#219653] ml-1">Advance Amount</label>
+                                    <div className="relative mt-1">
+                                        <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#219653]" />
+                                        <Input
+                                            {...register("advanceAmount")}
+                                            type="number"
+                                            placeholder="1000"
+                                            className={cn(
+                                                "h-14 pl-10 rounded-xl border-[#E2F1E8] focus-visible:ring-1 focus-visible:ring-[#219653] text-gray-700 placeholder:text-gray-300",
+                                                errors.advanceAmount && "border-red-500 focus-visible:ring-red-500"
+                                            )}
+                                        />
+                                    </div>
+                                    {errors.advanceAmount && (
+                                        <p className="text-[11px] text-red-500 ml-1">{errors.advanceAmount.message}</p>
+                                    )}
                                 </div>
-                                {errors.advanceAmount && (
-                                    <p className="text-[11px] text-red-500 ml-1">{errors.advanceAmount.message}</p>
-                                )}
-                            </div>
+                            )}
                         </div>
 
                         {/* Submit Button (Fixed) */}

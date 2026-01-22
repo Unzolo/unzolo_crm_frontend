@@ -73,6 +73,7 @@ const createBookingSchema = z.object({
     members: z.array(memberSchema).min(1, "At least one participant is required"),
     memberCount: z.coerce.number().min(1).optional(),
     preferredDate: z.date().optional(),
+    totalPackagePrice: z.coerce.number().optional(),
 });
 
 type CreateBookingValues = z.infer<typeof createBookingSchema>;
@@ -107,6 +108,7 @@ function CreateBookingPage() {
             members: [{ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: true }],
             amount: 0,
             memberCount: 1,
+            totalPackagePrice: 0,
         },
     });
 
@@ -138,6 +140,7 @@ function CreateBookingPage() {
     const paymentType = watch("paymentType");
     const members = watch("members");
     const memberCountValue = watch("memberCount");
+    const totalPackagePriceValue = watch("totalPackagePrice");
 
     useEffect(() => {
         if (trip) {
@@ -146,7 +149,7 @@ function CreateBookingPage() {
                 count = Number(memberCountValue);
             }
 
-            const fullPrice = parseFloat(trip.price) * count;
+            const fullPrice = trip.type === 'package' ? (Number(totalPackagePriceValue) || 0) : parseFloat(trip.price) * count;
             const advancePrice = parseFloat(trip.advanceAmount) * count;
 
             if (paymentType === "full") {
@@ -155,7 +158,7 @@ function CreateBookingPage() {
                 setValue("amount", advancePrice);
             }
         }
-    }, [trip, paymentType, members.length, memberCountValue, setValue]);
+    }, [trip, paymentType, members.length, memberCountValue, totalPackagePriceValue, setValue]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -195,6 +198,7 @@ function CreateBookingPage() {
             if (trip?.type === 'package') {
                 if (data.memberCount) formData.append("memberCount", data.memberCount.toString());
                 if (data.preferredDate) formData.append("preferredDate", data.preferredDate.toISOString());
+                if (data.totalPackagePrice) formData.append("totalPackagePrice", data.totalPackagePrice.toString());
             } else {
                 formData.append("memberCount", data.members.length.toString());
             }
@@ -340,6 +344,13 @@ function CreateBookingPage() {
                                         <div className="relative">
                                             <Input {...register("memberCount")} type="number" placeholder="Count" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
                                             <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1 col-span-2">
+                                        <label className="text-xs font-bold text-black ml-1">Total Amount Charged</label>
+                                        <div className="relative">
+                                            <Input {...register("totalPackagePrice")} type="number" placeholder="Enter total package price" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</div>
                                         </div>
                                     </div>
                                 </div>
@@ -503,35 +514,37 @@ function CreateBookingPage() {
                                                         <p className="text-xs text-gray-400 font-medium">Pay complete amount now</p>
                                                     </div>
                                                 </div>
-                                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (parseFloat(trip.price) * (trip.type === 'package' ? (memberCountValue || 1) : fields.length)).toLocaleString() : "..."}</span>
+                                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (trip.type === 'package' ? (Number(totalPackagePriceValue) || 0) : parseFloat(trip.price) * fields.length).toLocaleString() : "..."}</span>
                                             </Card>
 
-                                            {/* Advance Payment */}
-                                            <Card
-                                                onClick={() => setValue("paymentType", "advance")}
-                                                className={cn(
-                                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between",
-                                                    paymentType === "advance" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
-                                                )}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="relative pl-4">
-                                                        <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
-                                                            <Landmark className="w-6 h-6 text-white" />
-                                                        </div>
-                                                        {paymentType === "advance" && (
-                                                            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
-                                                                <Check className="w-3 h-3 text-[#219653]" />
+                                            {/* Advance Payment - Only for Camps */}
+                                            {trip?.type !== 'package' && (
+                                                <Card
+                                                    onClick={() => setValue("paymentType", "advance")}
+                                                    className={cn(
+                                                        "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between",
+                                                        paymentType === "advance" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="relative pl-4">
+                                                            <div className="w-12 h-12 rounded-full bg-[#219653] flex items-center justify-center">
+                                                                <Landmark className="w-6 h-6 text-white" />
                                                             </div>
-                                                        )}
+                                                            {paymentType === "advance" && (
+                                                                <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white border border-[#219653] flex items-center justify-center">
+                                                                    <Check className="w-3 h-3 text-[#219653]" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-base font-bold text-black">Advance Payment</p>
+                                                            <p className="text-xs text-gray-400 font-medium max-w-[150px]">Pay advance and balance later</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-base font-bold text-black">Advance Payment</p>
-                                                        <p className="text-xs text-gray-400 font-medium max-w-[150px]">Pay advance and balance later</p>
-                                                    </div>
-                                                </div>
-                                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (parseFloat(trip.advanceAmount) * (trip.type === 'package' ? (memberCountValue || 1) : fields.length)).toLocaleString() : "..."}</span>
-                                            </Card>
+                                                    <span className="text-lg font-bold text-[#219653]">₹{trip ? (parseFloat(trip.advanceAmount) * fields.length).toLocaleString() : "..."}</span>
+                                                </Card>
+                                            )}
 
                                             {/* Custom Amount */}
                                             <Card

@@ -447,7 +447,7 @@ function BookingDetailsPage() {
                         </div>
 
                         <div className="space-y-4 mb-8">
-                            {/* Full Payment */}
+                            {/* Balance Payment */}
                             <Card
                                 onClick={() => setPaymentType("balance")}
                                 className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between ${paymentType === "balance" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30 shadow-none border-none"}`}
@@ -464,7 +464,7 @@ function BookingDetailsPage() {
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-base font-bold text-black">Balance Amount</p>
+                                        <p className="text-base font-bold text-black">Balance Payment</p>
                                         <p className="text-xs text-gray-400 font-medium">Pay complete remaining amount</p>
                                     </div>
                                 </div>
@@ -473,7 +473,7 @@ function BookingDetailsPage() {
 
 
 
-                            {/* Custom Amount */}
+                            {/* Custom Payment */}
                             <Card
                                 onClick={() => setPaymentType("custom")}
                                 className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-row justify-between ${paymentType === "custom" ? "border-[#219653] bg-[#E2F1E8]/20" : "border-[#E2F1E8]/50 bg-gray-50/30 shadow-none border-none"}`}
@@ -490,7 +490,7 @@ function BookingDetailsPage() {
                                         )}
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-black mb-2">Custom Amount</p>
+                                        <p className="text-base font-bold text-black mb-2">Custom Payment (Advance)</p>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 placeholder="Enter Amount here"
