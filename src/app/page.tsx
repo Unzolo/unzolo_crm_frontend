@@ -12,7 +12,8 @@ import {
   Loader2,
   Pencil,
   MessageSquare,
-  Clock
+  Clock,
+  ShieldCheck
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +39,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PwaInstallBanner } from "@/components/pwa-install-prompt";
 import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
 
 function DashboardPage() {
   const router = useRouter();
@@ -79,6 +81,22 @@ function DashboardPage() {
   });
 
   const userName = profileResponse?.data?.name || "Partner";
+  const userEmail = profileResponse?.data?.email || "";
+  const isAdmin = userEmail === "unzoloapp@gmail.com";
+
+  useEffect(() => {
+    if (isAdmin && !profileLoading) {
+      router.push("/admin");
+    }
+  }, [isAdmin, profileLoading, router]);
+
+  if (profileLoading || (isAdmin && !profileLoading)) {
+    return (
+      <div className="min-h-screen bg-[#E2F1E8] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#219653] animate-spin" />
+      </div>
+    );
+  }
 
   const stats = [
     {
@@ -129,6 +147,12 @@ function DashboardPage() {
       onClick: () => router.push("/enquiries"),
       isComingSoon: true
     },
+    ...(isAdmin ? [{
+      title: "Admin Platform",
+      description: "Manage partners, trips and global data",
+      icon: <ShieldCheck className="w-6 h-6 text-white" />,
+      onClick: () => router.push("/admin"),
+    }] : []),
   ];
 
   return (
@@ -146,11 +170,11 @@ function DashboardPage() {
               <User className="w-6 h-6 text-[#219653]" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-48 p-2 rounded-2xl border-none shadow-xl bg-white mt-2" align="end">
+          <PopoverContent className="w-48 p-2 rounded-lg border-none shadow-xl bg-white mt-2" align="end">
             <div className="flex flex-col gap-1">
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-3 rounded-xl hover:bg-[#E2F1E8] hover:text-[#219653] font-semibold"
+                className="w-full justify-start gap-3 rounded-lg hover:bg-[#E2F1E8] hover:text-[#219653] font-semibold"
                 onClick={() => router.push("/profile")}
               >
                 <User className="w-4 h-4" />
@@ -159,7 +183,7 @@ function DashboardPage() {
               <div className="h-px bg-gray-100 my-1 mx-2" />
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-3 rounded-xl hover:bg-red-50 hover:text-red-500 font-semibold"
+                className="w-full justify-start gap-3 rounded-lg hover:bg-red-50 hover:text-red-500 font-semibold"
                 onClick={() => {
                   localStorage.removeItem("token");
                   localStorage.removeItem("user");
@@ -183,7 +207,7 @@ function DashboardPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 bg-white lg:bg-transparent rounded-t-[30px] lg:rounded-none p-4 lg:p-6 shadow-2xl lg:shadow-none">
+      <div className="flex-1 bg-white lg:bg-transparent rounded-t-lg lg:rounded-none p-4 lg:p-6 shadow-2xl lg:shadow-none">
         <div className="max-w-5xl mx-auto">
           {/* Quick Stats Section */}
           <div className="mb-6 lg:mb-8">
@@ -195,7 +219,7 @@ function DashboardPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {statsLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
-                  <Card key={i} className="p-4 lg:p-6 border-none shadow-sm rounded-[16px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50">
+                  <Card key={i} className="p-4 lg:p-6 border-none shadow-sm rounded-lg flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50">
                     <Skeleton className="w-12 h-12 lg:w-16 lg:h-16 rounded-full shrink-0" />
                     <div className="flex flex-col justify-center gap-2 flex-1">
                       <Skeleton className="h-3 w-16" />
@@ -205,7 +229,7 @@ function DashboardPage() {
                 ))
               ) : (
                 stats.map((stat, index) => (
-                  <Card key={index} className="p-4 lg:p-6 border-none shadow-sm rounded-[16px] lg:rounded-[28px] flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50 hover:shadow-md hover:ring-[#219653]/10 transition-all group">
+                  <Card key={index} className="p-4 lg:p-6 border-none shadow-sm rounded-lg flex flex-row gap-3 lg:gap-4 bg-white ring-1 ring-gray-50 hover:shadow-md hover:ring-[#219653]/10 transition-all group">
                     <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0 group-hover:bg-[#219653]/10 transition-colors">
                       <div className="group-hover:scale-110 transition-transform">{stat.icon}</div>
                     </div>
@@ -230,7 +254,7 @@ function DashboardPage() {
               {actions.map((action, index) => (
                 <Card
                   key={index}
-                  className="p-4 lg:p-6 rounded-[16px] lg:rounded-[32px] bg-[#219653]/10 lg:bg-white flex flex-row items-center gap-4 lg:gap-6 border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98] group"
+                  className="p-4 lg:p-6 rounded-lg bg-[#219653]/10 lg:bg-white flex flex-row items-center gap-4 lg:gap-6 border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md transition-all cursor-pointer active:scale-[0.98] group"
                   onClick={action.onClick}
                 >
                   <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-[#219653] flex items-center justify-center shrink-0 shadow-sm transition-transform ">

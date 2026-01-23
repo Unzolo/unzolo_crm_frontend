@@ -102,11 +102,11 @@ function EnquiriesPage() {
                             <Construction className="w-12 h-12 text-[#219653]" />
                         </div>
                         <h2 className="text-2xl font-black text-black mb-4">Under Development</h2>
-                        <Card className="p-6 border-none shadow-xl ring-1 ring-gray-100 rounded-[32px] bg-white relative overflow-hidden group">
+                        <Card className="p-6 border-none shadow-xl ring-1 ring-gray-100 rounded-lg bg-white relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4">
                                 <Clock className="w-5 h-5 text-[#219653] animate-pulse" />
                             </div>
-                            <div className="flex items-center justify-center w-12 h-12 bg-[#219653] rounded-2xl mb-4 text-white">
+                            <div className="flex items-center justify-center w-12 h-12 bg-[#219653] rounded-lg mb-4 text-white">
                                 <MessageSquare className="w-6 h-6" />
                             </div>
                             <p className="text-gray-500 font-medium leading-relaxed mb-6">
@@ -174,7 +174,7 @@ function EnquiriesPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 bg-white rounded-t-[30px] lg:rounded-none p-4 lg:p-6 shadow-2xl lg:shadow-none overflow-y-auto">
+            <div className="flex-1 bg-white rounded-t-lg lg:rounded-none p-4 lg:p-6 shadow-2xl lg:shadow-none overflow-y-auto">
                 <div className="max-w-5xl mx-auto">
                     {/* Search and Filters */}
                     <div className="flex flex-col gap-4 mb-6">
@@ -183,7 +183,7 @@ function EnquiriesPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search leads by name or phone..."
-                                className="h-12 bg-gray-50/50 border-gray-200 rounded-2xl pr-12 focus-visible:ring-[#219653]"
+                                className="h-12 bg-gray-50/50 border-gray-200 rounded-lg pr-12 focus-visible:ring-[#219653]"
                             />
                             <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#219653]" />
                         </div>
@@ -211,7 +211,7 @@ function EnquiriesPage() {
                     <div className="space-y-4 pb-8">
                         {enquiriesLoading ? (
                             Array.from({ length: 5 }).map((_, i) => (
-                                <Card key={i} className="p-4 rounded-[24px] border-none ring-1 ring-gray-100 shadow-sm">
+                                <Card key={i} className="p-4 rounded-lg border-none ring-1 ring-gray-100 shadow-sm">
                                     <div className="flex items-center gap-4">
                                         <Skeleton className="w-12 h-12 rounded-full" />
                                         <div className="flex-1 space-y-2">
@@ -223,7 +223,7 @@ function EnquiriesPage() {
                             ))
                         ) : filteredEnquiries.length > 0 ? (
                             filteredEnquiries.map((enquiry: any) => (
-                                <Card key={enquiry._id} className="p-4 rounded-[24px] border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md transition-all active:scale-[0.99] group">
+                                <Card key={enquiry._id} className="p-4 rounded-lg border-none ring-1 ring-gray-100 shadow-sm hover:shadow-md transition-all active:scale-[0.99] group">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex items-center gap-4 min-w-0">
                                             <div className="w-12 h-12 rounded-full bg-[#E2F1E8] flex items-center justify-center shrink-0">

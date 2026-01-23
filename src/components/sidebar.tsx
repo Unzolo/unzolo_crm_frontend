@@ -11,12 +11,13 @@ import {
     LogOut,
     IndianRupee,
     MessageSquare,
+    ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 
-const navigation = [
+const defaultNavigation = [
     { name: "Dashboard", href: "/", icon: Home },
     { name: "Create Trip", href: "/create-trip", icon: PlusSquare },
     { name: "Manage Bookings", href: "/select-trip", icon: ClipboardCheck },
@@ -38,9 +39,18 @@ export function Sidebar() {
         retry: false,
     });
 
-    // Don't show sidebar on auth pages
-    if (pathname?.startsWith("/login") || pathname?.startsWith("/signup") || pathname?.startsWith("/otp") || pathname?.startsWith("/forgot-password") || pathname?.startsWith("/reset-password")) {
-        return null;
+    const userEmail = profile?.data?.email || "";
+    const isAdmin = userEmail === "unzoloapp@gmail.com";
+
+    let navigation = [];
+    if (isAdmin) {
+        navigation = [
+            { name: "Admin Dashboard", href: "/admin", icon: ShieldCheck },
+            { name: "Manage Trips", href: "/admin/trips", icon: Package },
+            { name: "Profile", href: "/profile", icon: User },
+        ];
+    } else {
+        navigation = [...defaultNavigation];
     }
 
     const handleLogout = () => {
@@ -48,6 +58,11 @@ export function Sidebar() {
         localStorage.removeItem("user");
         router.push("/login");
     };
+
+    // Don't show sidebar on auth pages
+    if (pathname?.startsWith("/login") || pathname?.startsWith("/signup") || pathname?.startsWith("/otp") || pathname?.startsWith("/forgot-password") || pathname?.startsWith("/reset-password")) {
+        return null;
+    }
 
     return (
         <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-gray-200">
@@ -67,7 +82,7 @@ export function Sidebar() {
                             key={item.name}
                             variant="ghost"
                             className={cn(
-                                "w-full justify-start gap-3 h-12 rounded-xl font-semibold transition-all",
+                                "w-full justify-start gap-3 h-12 rounded-lg font-semibold transition-all",
                                 isActive
                                     ? "bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
                                     : "text-gray-700 hover:bg-gray-100"

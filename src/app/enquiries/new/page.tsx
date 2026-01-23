@@ -146,7 +146,7 @@ function NewEnquiryPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 bg-white rounded-t-[30px] lg:rounded-none p-6 shadow-2xl lg:shadow-none overflow-y-auto">
+            <div className="flex-1 bg-white rounded-t-lg lg:rounded-none p-6 shadow-2xl lg:shadow-none overflow-y-auto">
                 <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
 
                     <Button
@@ -195,10 +195,10 @@ function NewEnquiryPage() {
                                     <SelectTrigger className="w-full h-14 bg-gray-50/50 border-gray-100 rounded-lg focus:ring-[#219653] px-4 text-sm font-medium">
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-none shadow-2xl">
-                                        <SelectItem value="hot" className="rounded-xl">Hot</SelectItem>
-                                        <SelectItem value="warm" className="rounded-xl">Warm</SelectItem>
-                                        <SelectItem value="cold" className="rounded-xl">Cold</SelectItem>
+                                    <SelectContent className="rounded-lg border-none shadow-2xl">
+                                        <SelectItem value="hot" className="rounded-lg">Hot</SelectItem>
+                                        <SelectItem value="warm" className="rounded-lg">Warm</SelectItem>
+                                        <SelectItem value="cold" className="rounded-lg">Cold</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -224,7 +224,7 @@ function NewEnquiryPage() {
                                             )}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 rounded-2xl border-none shadow-2xl" align="start">
+                                    <PopoverContent className="w-auto p-0 rounded-lg border-none shadow-2xl" align="start">
                                         <CalendarComponent
                                             mode="single"
                                             selected={formData.followUpDate ? new Date(formData.followUpDate) : undefined}
@@ -248,7 +248,7 @@ function NewEnquiryPage() {
                                 <MapPin className="w-3.5 h-3.5 text-[#219653]" /> Notes / Interests
                             </label>
                             <textarea
-                                className="w-full p-4 min-h-[120px] bg-gray-50/50 border-gray-100 rounded-[16px] focus:ring-[#219653] text-sm resize-none"
+                                className="w-full p-4 min-h-[120px] bg-gray-50/50 border-gray-100 rounded-lg focus:ring-[#219653] text-sm resize-none"
                                 placeholder="Destination, group size, special requests..."
                                 value={formData.notes}
                                 onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
@@ -259,7 +259,7 @@ function NewEnquiryPage() {
                     <Button
                         type="submit"
                         disabled={mutation.isPending}
-                        className="w-full h-14 bg-[#219653] hover:bg-[#1A7B44] text-white rounded-2xl shadow-lg shadow-[#219653]/20 font-bold text-lg"
+                        className="w-full h-14 bg-[#219653] hover:bg-[#1A7B44] text-white rounded-lg shadow-lg shadow-[#219653]/20 font-bold text-lg"
                     >
                         {mutation.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : "Save Enquiry"}
                     </Button>
@@ -268,7 +268,7 @@ function NewEnquiryPage() {
 
             {/* Customer Selection Drawer */}
             <Drawer open={isSelectingCustomer} onOpenChange={setIsSelectingCustomer}>
-                <DrawerContent className="h-[80vh] bg-white rounded-t-[40px]">
+                <DrawerContent className="h-[80vh] bg-white rounded-t-lg">
                     <DrawerHeader>
                         <DrawerTitle className="text-xl font-black text-center text-black">Previous Customers</DrawerTitle>
                     </DrawerHeader>
@@ -278,7 +278,7 @@ function NewEnquiryPage() {
                                 value={customerSearch}
                                 onChange={e => setCustomerSearch(e.target.value)}
                                 placeholder="Search by name or number..."
-                                className="h-12 bg-gray-50 border-none rounded-xl pr-10"
+                                className="h-12 bg-gray-50 border-none rounded-lg pr-10"
                             />
                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         </div>
