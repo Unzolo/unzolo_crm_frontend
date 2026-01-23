@@ -30,6 +30,8 @@ function AdminDashboardPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState("");
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [pendingState, setPendingState] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -80,6 +82,41 @@ function AdminDashboardPage() {
         }
     });
 
+    // Maintenance Mode Management
+    const { data: maintenanceData } = useQuery({
+        queryKey: ["maintenance-mode"],
+        queryFn: async () => {
+            const response = await apiWithOffline.get("/admin/settings/maintenance");
+            return response.data;
+        },
+        enabled: hasAccess
+    });
+
+    const maintenanceMutation = useMutation({
+        mutationFn: async (isEnabled: boolean) => {
+            return await apiWithOffline.post("/admin/settings/maintenance", { isEnabled });
+        },
+        onSuccess: (data: any) => {
+            queryClient.invalidateQueries({ queryKey: ["maintenance-mode"] });
+            toast.success(data.message || "Maintenance mode updated");
+        },
+        onError: () => {
+            toast.error("Failed to update maintenance mode");
+        }
+    });
+
+    const isMaintenanceOn = maintenanceData?.data?.maintenanceMode || false;
+
+    const handleConfirmToggle = (newState: boolean) => {
+        setPendingState(newState);
+        setIsConfirmOpen(true);
+    };
+
+    const confirmMaintenanceChange = () => {
+        maintenanceMutation.mutate(pendingState);
+        setIsConfirmOpen(false);
+    };
+
     const globalStats = statsResponse?.data || {
         totalPartners: 0,
         totalTrips: 0,
@@ -122,7 +159,6 @@ function AdminDashboardPage() {
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
             {/* Header - Mobile Only */}
             <div className="p-4 flex items-center justify-between lg:hidden bg-[#E2F1E8]">
-                <div className="w-10" />
                 <h1 className="text-xl font-bold text-black flex-1 text-center">Admin Platform</h1>
                 <Button
                     variant="ghost"
@@ -140,18 +176,40 @@ function AdminDashboardPage() {
                     <div className="flex items-center gap-4">
                         <ShieldCheck className="w-8 h-8 text-[#219653]" />
                         <div>
-                            <h1 className="text-3xl font-bold text-black">Admin Platform</h1>
+                            <div className="flex items-center gap-3">
+                                <ShieldCheck className="w-8 h-8 text-[#219653]" />
+                                <h1 className="text-3xl font-bold text-black">Admin Platform</h1>
+                            </div>
                             <p className="text-sm text-gray-500 mt-1">Global management for Unzolo CRM</p>
                         </div>
                     </div>
-                    <Button
-                        variant="ghost"
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
-                    >
-                        <LogOut className="w-5 h-5" />
-                        Logout
-                    </Button>
+
+                    <div className="flex items-center gap-6">
+                        <div className="flex flex-col items-end gap-1">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Maintenance Mode</span>
+                            <div
+                                onClick={() => handleConfirmToggle(!isMaintenanceOn)}
+                                className={cn(
+                                    "w-12 h-6 rounded-full relative cursor-pointer transition-all duration-300",
+                                    isMaintenanceOn ? "bg-red-500" : "bg-gray-200"
+                                )}
+                            >
+                                <div className={cn(
+                                    "absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300",
+                                    isMaintenanceOn ? "left-7" : "left-1"
+                                )} />
+                            </div>
+                        </div>
+
+                        <Button
+                            variant="ghost"
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
+                        >
+                            <LogOut className="w-5 h-5" />
+                            Logout
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -195,6 +253,52 @@ function AdminDashboardPage() {
                             <div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-0.5">Revenue</p>
                                 <p className="text-lg font-bold text-purple-600 leading-none">₹{globalStats.totalEarnings.toLocaleString()}</p>
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Global Settings Section */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                            <h2 className="text-xl font-bold text-black">Global Settings</h2>
+                        </div>
+                        <Card className="p-3 border-none ring-1 ring-gray-100 shadow-sm rounded-2xl flex flex-row items-center justify-between bg-white overflow-hidden relative">
+                            <div className="flex items-center gap-4">
+                                {/* <div className={cn(
+                                    "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors",
+                                    isMaintenanceOn ? "bg-red-100" : "bg-gray-100"
+                                )}>
+                                    <Settings className={cn(
+                                        "w-6 h-6 transition-colors",
+                                        isMaintenanceOn ? "text-red-600" : "text-gray-400"
+                                    )} />
+                                </div> */}
+                                <div>
+                                    <h3 className="font-bold text-black">Under Maintenance Mode</h3>
+                                    <p className="text-xs text-gray-500 font-medium">When active, normal users will see a maintenance screen and cannot access the app.</p>
+                                </div>
+                            </div>
+
+                            <div
+                                onClick={() => handleConfirmToggle(!isMaintenanceOn)}
+                                className={cn(
+                                    "flex items-center gap-3 px-0 py-0 rounded-full cursor-pointer transition-all duration-300 border-2 shrink-0 ml-4",
+                                    isMaintenanceOn
+                                        ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                                        : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                                )}
+                            >
+                                
+                                <div className={cn(
+                                    "w-10 h-5 rounded-full relative transition-all duration-300",
+                                    isMaintenanceOn ? "bg-red-500" : "bg-gray-300"
+                                )}>
+                                    <div className={cn(
+                                        "absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-sm",
+                                        isMaintenanceOn ? "left-5.5" : "left-0.5"
+                                    )} />
+                                </div>
                             </div>
                         </Card>
                     </div>
@@ -256,27 +360,7 @@ function AdminDashboardPage() {
                                             </div>
 
                                             <div className="flex items-center gap-1">
-                                                {/* {partner.status === 'active' ? (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="h-8 text-[10px] font-bold text-red-500 hover:bg-red-50 rounded-full"
-                                                        onClick={() => statusMutation.mutate({ id: partner.id, status: 'blocked' })}
-                                                    >
-                                                        Block
-                                                    </Button>
-                                                ) : (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="h-8 text-[10px] font-bold text-green-500 hover:bg-green-50 rounded-full"
-                                                        onClick={() => statusMutation.mutate({ id: partner.id, status: 'active' })}
-                                                    >
-                                                        Activate
-                                                    </Button>
-                                                )} */}
                                                 <Button
-
                                                     variant="ghost"
                                                     size="icon"
                                                     className="w-8 h-8 rounded-full hover:bg-[#E2F1E8] text-[#219653]"
@@ -300,6 +384,48 @@ function AdminDashboardPage() {
                     </div>
                 </div>
             </div>
+            {/* Confirmation Modal */}
+            {isConfirmOpen && (
+                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <Card className="w-full max-w-sm p-6 border-none shadow-2xl rounded-3xl bg-white animate-in zoom-in-95 duration-300">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className={cn(
+                                "w-16 h-16 rounded-full flex items-center justify-center",
+                                pendingState ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"
+                            )}>
+                                <ShieldCheck className="w-8 h-8" />
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-bold text-black">Confirm Action</h3>
+                                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                                    Are you sure you want to {pendingState ? "ENABLE" : "DISABLE"} maintenance mode?
+                                    {pendingState ? " Normal users will be blocked from accessing the platform." : " All users will regain access to the platform."}
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col w-full gap-3 pt-2">
+                                <Button
+                                    onClick={confirmMaintenanceChange}
+                                    className={cn(
+                                        "w-full h-12 rounded-full font-bold text-white shadow-lg",
+                                        pendingState ? "bg-red-500 hover:bg-red-600 shadow-red-100" : "bg-[#219653] hover:bg-[#1A7B44] shadow-green-100"
+                                    )}
+                                >
+                                    Yes, {pendingState ? "Enable" : "Disable"}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setIsConfirmOpen(false)}
+                                    className="w-full h-12 rounded-full font-bold text-gray-400"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

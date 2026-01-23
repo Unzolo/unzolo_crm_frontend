@@ -44,6 +44,7 @@ import { OfflineProvider } from "@/components/offline-provider";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import { PwaInstallBanner } from "@/components/pwa-install-prompt";
 import { MainLayout } from "@/components/main-layout";
+import { MaintenanceGuard } from "@/components/maintenance-guard";
 
 export default function RootLayout({
   children,
@@ -58,7 +59,9 @@ export default function RootLayout({
         <QueryProvider>
           <OfflineProvider>
             <MainLayout>
-              {children}
+              <MaintenanceGuard>
+                {children}
+              </MaintenanceGuard>
             </MainLayout>
             <Toaster position="top-center" richColors />
             <OfflineIndicator />
