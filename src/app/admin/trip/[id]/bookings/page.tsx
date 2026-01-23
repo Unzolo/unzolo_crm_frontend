@@ -337,8 +337,8 @@ function AdminTripBookingsPage() {
                                 return (
                                     <Card
                                         key={booking.id}
+                                        onClick={() => router.push(`/admin/booking-details/${booking.id}`)}
                                         className="p-4 border-none ring-1 ring-gray-100 shadow-sm rounded-lg bg-white group hover:ring-[#219653]/30 transition-all cursor-pointer"
-
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex items-center gap-4">

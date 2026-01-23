@@ -11,7 +11,8 @@ import {
     ChevronRight,
     Loader2,
     Settings,
-    MoreVertical
+    MoreVertical,
+    LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,6 +30,12 @@ function AdminDashboardPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState("");
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/login");
+    };
 
     // Check profile
     const { data: profileResponse, isLoading: profileLoading } = useQuery({
@@ -114,39 +121,37 @@ function AdminDashboardPage() {
     return (
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
             {/* Header - Mobile Only */}
-            <div className="p-4 flex items-center justify-between lg:hidden">
+            <div className="p-4 flex items-center justify-between lg:hidden bg-[#E2F1E8]">
+                <div className="w-10" />
+                <h1 className="text-xl font-bold text-black flex-1 text-center">Admin Platform</h1>
                 <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => router.back()}
-                    className="text-black hover:bg-transparent px-0"
+                    onClick={handleLogout}
+                    className="text-red-500 hover:bg-red-50"
                 >
-                    <ArrowLeft className="w-6 h-6" />
+                    <LogOut className="w-5 h-5" />
                 </Button>
-                <h1 className="text-xl font-bold text-black flex-1 text-center">Admin Platform</h1>
-                <div className="w-10" />
             </div>
 
             {/* Desktop Header */}
             <div className="hidden lg:block p-6 bg-white border-b border-gray-200">
                 <div className="max-w-6xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => router.back()}
-                            className="text-black hover:bg-transparent px-0"
-                        >
-                            <ArrowLeft className="w-6 h-6" />
-                        </Button>
+                        <ShieldCheck className="w-8 h-8 text-[#219653]" />
                         <div>
-                            <div className="flex items-center gap-3">
-                                <ShieldCheck className="w-8 h-8 text-[#219653]" />
-                                <h1 className="text-3xl font-bold text-black">Admin Platform</h1>
-                            </div>
+                            <h1 className="text-3xl font-bold text-black">Admin Platform</h1>
                             <p className="text-sm text-gray-500 mt-1">Global management for Unzolo CRM</p>
                         </div>
                     </div>
+                    <Button
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
+                    >
+                        <LogOut className="w-5 h-5" />
+                        Logout
+                    </Button>
                 </div>
             </div>
 
@@ -271,7 +276,7 @@ function AdminDashboardPage() {
                                                     </Button>
                                                 )} */}
                                                 <Button
-                                                    
+
                                                     variant="ghost"
                                                     size="icon"
                                                     className="w-8 h-8 rounded-full hover:bg-[#E2F1E8] text-[#219653]"
