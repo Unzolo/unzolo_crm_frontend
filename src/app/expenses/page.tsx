@@ -42,7 +42,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-function SelectTripPage() {
+function ExpensesPage() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<"date" | "price" | "title">("date");
@@ -120,14 +120,6 @@ function SelectTripPage() {
         };
     }, [allTrips, searchQuery, sortBy, sortOrder]);
 
-    const formatTripDate = (start: string, end: string) => {
-        try {
-            return `${format(new Date(start), "do MMM")} - ${format(new Date(end), "do MMM")}`;
-        } catch {
-            return "Date TBD";
-        }
-    };
-
     return (
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
             {/* Header - Mobile Only */}
@@ -140,15 +132,15 @@ function SelectTripPage() {
                 >
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
-                <h1 className="text-xl font-bold text-black flex-1 text-center">Manage Bookings</h1>
+                <h1 className="text-xl font-bold text-black flex-1 text-center">Manage Expenses</h1>
                 <div className="w-10" />
             </div>
 
             {/* Desktop Header */}
             <div className="hidden lg:block p-6 bg-white border-b border-gray-200">
                 <div className="max-w-5xl mx-auto">
-                    <h1 className="text-3xl font-bold text-black">Manage Bookings</h1>
-                    <p className="text-sm text-gray-500 mt-1">Select a trip to view and manage its bookings</p>
+                    <h1 className="text-3xl font-bold text-black">Manage Expenses</h1>
+                    <p className="text-sm text-gray-500 mt-1">Select a trip to view and manage its expenses</p>
                 </div>
             </div>
 
@@ -161,7 +153,7 @@ function SelectTripPage() {
                                 <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
                                 <h2 className="text-lg lg:text-xl font-bold text-black">Select Trip</h2>
                             </div>
-                            <p className="text-xs lg:text-sm text-gray-400 font-medium ml-3">Choose a camp or package to manage its bookings</p>
+                            <p className="text-xs lg:text-sm text-gray-400 font-medium ml-3">Choose a camp or package to manage its expenses</p>
                         </div>
 
                         {/* Search and Sort */}
@@ -286,7 +278,7 @@ function SelectTripPage() {
                                                             router={router}
                                                             onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
                                                             onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
-                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                            onClick={() => router.push(`/expenses/${trip._id || trip.id}`)}
                                                         />
                                                     ))}
                                                 </div>
@@ -303,7 +295,7 @@ function SelectTripPage() {
                                                             router={router}
                                                             onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
                                                             onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
-                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                            onClick={() => router.push(`/expenses/${trip._id || trip.id}`)}
                                                         />
                                                     ))}
                                                 </div>
@@ -350,7 +342,7 @@ function SelectTripPage() {
                                                             router={router}
                                                             onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
                                                             onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
-                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                            onClick={() => router.push(`/expenses/${trip._id || trip.id}`)}
                                                         />
                                                     ))}
                                                 </div>
@@ -367,7 +359,7 @@ function SelectTripPage() {
                                                             router={router}
                                                             onEdit={() => router.push(`/edit-trip/${trip._id || trip.id}`)}
                                                             onDelete={() => deleteTripMutation.mutate(trip._id || trip.id)}
-                                                            onClick={() => router.push(`/manage-bookings/${trip._id || trip.id}`)}
+                                                            onClick={() => router.push(`/expenses/${trip._id || trip.id}`)}
                                                         />
                                                     ))}
                                                 </div>
@@ -457,7 +449,7 @@ function TripCard({ trip, onClick, onEdit, onDelete, router }: { trip: any, onCl
                         className="h-8 w-8 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg"
                         onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/expenses/${trip._id || trip.id}`);
+                            onClick();
                         }}
                         title="Manage Expenses"
                     >
@@ -502,4 +494,4 @@ function TripCard({ trip, onClick, onEdit, onDelete, router }: { trip: any, onCl
     );
 }
 
-export default withAuth(SelectTripPage);
+export default withAuth(ExpensesPage);

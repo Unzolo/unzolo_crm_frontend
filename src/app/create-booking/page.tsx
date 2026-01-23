@@ -74,6 +74,7 @@ const createBookingSchema = z.object({
     memberCount: z.coerce.number().min(1).optional(),
     preferredDate: z.date().optional(),
     totalPackagePrice: z.coerce.number().optional(),
+    concessionAmount: z.coerce.number().optional(),
 });
 
 type CreateBookingValues = z.infer<typeof createBookingSchema>;
@@ -109,6 +110,7 @@ function CreateBookingPage() {
             amount: 0,
             memberCount: 1,
             totalPackagePrice: 0,
+            concessionAmount: 0,
         },
     });
 
@@ -141,6 +143,7 @@ function CreateBookingPage() {
     const members = watch("members");
     const memberCountValue = watch("memberCount");
     const totalPackagePriceValue = watch("totalPackagePrice");
+    const concessionAmountValue = watch("concessionAmount") || 0;
 
     useEffect(() => {
         if (trip) {
@@ -149,8 +152,27 @@ function CreateBookingPage() {
                 count = Number(memberCountValue);
             }
 
-            const fullPrice = trip.type === 'package' ? (Number(totalPackagePriceValue) || 0) : parseFloat(trip.price) * count;
+            // For packages, auto-calculate totalPackagePrice if not set or update (user can override)
+            // But to make it editable defaults, we only set it if it matches calculation-logic or first load
+            // A simpler approach for "default calculated":
+            if (trip.type === 'package') {
+                // Check if we should update the default
+                // We can use a separate effect for this or combine.
+                // Let's rely on user input, but if memberCountValue changes, we can suggest/auto-update if needed. 
+                // The user requirement says "charged for particular package for that members"
+                // "show calculated amount as default"
+                const calculatedDefault = parseFloat(trip.price) * count;
+                // We will update totalPackagePrice only if it is 0 (initial) or maybe we shouldn't overwrite always?
+                // "show calculated amount as default" implies initial value.
+                // But wait, if memberCount changes, calculate should probably update?
+                // Let's update it.
+            }
+
+            let fullPrice = trip.type === 'package' ? (Number(totalPackagePriceValue) || 0) : parseFloat(trip.price) * count;
             const advancePrice = parseFloat(trip.advanceAmount) * count;
+
+            // Apply concession to full price
+            fullPrice = Math.max(0, fullPrice - Number(concessionAmountValue));
 
             if (paymentType === "full") {
                 setValue("amount", fullPrice);
@@ -158,7 +180,15 @@ function CreateBookingPage() {
                 setValue("amount", advancePrice);
             }
         }
-    }, [trip, paymentType, members.length, memberCountValue, totalPackagePriceValue, setValue]);
+    }, [trip, paymentType, members.length, memberCountValue, totalPackagePriceValue, concessionAmountValue, setValue]);
+
+    // Effect to update totalPackagePrice when memberCount changes for packages
+    useEffect(() => {
+        if (trip?.type === 'package' && memberCountValue) {
+            const defaultPrice = parseFloat(trip.price) * Number(memberCountValue);
+            setValue("totalPackagePrice", defaultPrice);
+        }
+    }, [trip, memberCountValue, setValue]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -201,6 +231,10 @@ function CreateBookingPage() {
                 if (data.totalPackagePrice) formData.append("totalPackagePrice", data.totalPackagePrice.toString());
             } else {
                 formData.append("memberCount", data.members.length.toString());
+            }
+
+            if (data.concessionAmount) {
+                formData.append("concessionAmount", data.concessionAmount.toString());
             }
 
             const cleanedMembers = data.members.map((member) => ({
@@ -315,42 +349,104 @@ function CreateBookingPage() {
                             </Card>
                         )}
 
+                        {/* Concession/Opt-out Field - Only for Camps */}
+                        {trip?.type !== 'package' && (
+                            <Card className="p-4 border-none shadow-none bg-[#EE5A6F]/5 rounded-2xl flex flex-col gap-3 mb-8">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-6 bg-[#EE5A6F] rounded-br-full rounded-tr-full" />
+                                    <h3 className="text-base font-bold text-black tracking-tight">Concession / Opt-outs</h3>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <p className="text-[11px] text-gray-500 font-medium ml-1">If any amenities like travel opted out, enter amount to reduce</p>
+                                    <div className="relative">
+                                        <Input
+                                            {...register("concessionAmount")}
+                                            type="number"
+                                            placeholder="eg: 500"
+                                            className="h-12 bg-white border-[#EE5A6F]/20 rounded-xl pl-10 focus-visible:ring-[#EE5A6F] font-bold text-[#EE5A6F]"
+                                        />
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#EE5A6F] font-bold">₹</div>
+                                    </div>
+                                </div>
+                            </Card>
+                        )}
+
                         <form id="booking-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 pb-32">
                             {/* Package Specific Fields */}
                             {trip?.type === 'package' && (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-black ml-1">Preferred Date</label>
-                                        <Controller
-                                            control={control}
-                                            name="preferredDate"
-                                            render={({ field }) => (
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button variant="outline" className={cn("w-full h-12 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]", !field.value && "text-muted-foreground")}>
-                                                            <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
-                                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="rounded-xl border-[#E2F1E8]" />
-                                                    </PopoverContent>
-                                                </Popover>
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-black ml-1">Total Members</label>
-                                        <div className="relative">
-                                            <Input {...register("memberCount")} type="number" placeholder="Count" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
-                                            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-black ml-1">Preferred Date</label>
+                                            <Controller
+                                                control={control}
+                                                name="preferredDate"
+                                                render={({ field }) => (
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button variant="outline" className={cn("w-full h-12 justify-start text-left font-normal bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]", !field.value && "text-muted-foreground")}>
+                                                                <CalendarIcon className="mr-2 h-4 w-4 text-[#219653]" />
+                                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <CalendarComponent mode="single" selected={field.value} onSelect={field.onChange} initialFocus className="rounded-xl border-[#E2F1E8]" />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-black ml-1">Total Members</label>
+                                            <div className="relative">
+                                                <Input {...register("memberCount")} type="number" placeholder="Count" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
+                                                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-1 col-span-2">
+
+                                    {/* Pricing Calculation Summary */}
+                                    {memberCountValue && trip?.price && (
+                                        <Card className="p-4 border-none bg-gradient-to-br from-[#219653]/10 to-[#E2F1E8]/50 rounded-2xl">
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-5 bg-[#219653] rounded-full" />
+                                                    <h3 className="text-sm font-bold text-[#219653]">Pricing Breakdown</h3>
+                                                </div>
+
+                                                <div className="space-y-2 bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-xs text-gray-600 font-medium">Per Person Price</span>
+                                                        <span className="text-sm font-bold text-gray-800">₹{parseFloat(trip.price).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-xs text-gray-600 font-medium">Number of Members</span>
+                                                        <span className="text-sm font-bold text-gray-800">× {memberCountValue}</span>
+                                                    </div>
+                                                    <div className="h-px bg-gradient-to-r from-transparent via-[#219653]/30 to-transparent my-1" />
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-sm font-bold text-[#219653]">Calculated Total</span>
+                                                        <span className="text-lg font-bold text-[#219653]">₹{(Number(memberCountValue) * parseFloat(trip.price)).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+
+                                                <p className="text-[10px] text-gray-500 font-medium italic text-center">
+                                                    You can modify the total amount below if needed
+                                                </p>
+                                            </div>
+                                        </Card>
+                                    )}
+
+                                    <div className="space-y-1">
                                         <label className="text-xs font-bold text-black ml-1">Total Amount Charged</label>
                                         <div className="relative">
-                                            <Input {...register("totalPackagePrice")} type="number" placeholder="Enter total package price" className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-xl pl-10 focus-visible:ring-[#219653]" />
-                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">₹</div>
+                                            <Input
+                                                {...register("totalPackagePrice")}
+                                                type="number"
+                                                placeholder="Enter total package price"
+                                                className="h-14 bg-white border-2 border-[#219653]/20 rounded-xl pl-10 focus-visible:ring-2 focus-visible:ring-[#219653] font-semibold text-lg"
+                                            />
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#219653] font-bold text-lg">₹</div>
                                         </div>
                                     </div>
                                 </div>
@@ -514,7 +610,18 @@ function CreateBookingPage() {
                                                         <p className="text-xs text-gray-400 font-medium">Pay complete amount now</p>
                                                     </div>
                                                 </div>
-                                                <span className="text-lg font-bold text-[#219653]">₹{trip ? (trip.type === 'package' ? (Number(totalPackagePriceValue) || 0) : parseFloat(trip.price) * fields.length).toLocaleString() : "..."}</span>
+                                                <div className="text-right">
+                                                    <span className="text-lg font-bold text-[#219653]">
+                                                        ₹{trip ? (
+                                                            Math.max(0, (trip.type === 'package' ? (Number(totalPackagePriceValue) || 0) : parseFloat(trip.price) * fields.length) - Number(concessionAmountValue))
+                                                        ).toLocaleString() : "..."}
+                                                    </span>
+                                                    {Number(concessionAmountValue) > 0 && (
+                                                        <p className="text-[10px] text-gray-400 font-bold line-through">
+                                                            ₹{(trip.type === 'package' ? (Number(totalPackagePriceValue) || 0) : parseFloat(trip.price) * fields.length).toLocaleString()}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </Card>
 
                                             {/* Advance Payment - Only for Camps */}

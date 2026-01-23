@@ -3,7 +3,7 @@
  */
 
 const DB_NAME = 'unzolo_crm_db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 // Store names
 export const STORES = {
@@ -13,6 +13,7 @@ export const STORES = {
   SYNC_QUEUE: 'sync_queue',
   STATS: 'stats',
   PROFILE: 'profile',
+  ENQUIRIES: 'enquiries',
 } as const;
 
 export interface PendingRequest {
@@ -28,7 +29,7 @@ export interface PendingRequest {
 export interface SyncQueueItem {
   id: string;
   action: 'create' | 'update' | 'delete';
-  entity: 'booking' | 'trip' | 'payment';
+  entity: 'booking' | 'trip' | 'payment' | 'enquiry';
   data: any;
   timestamp: number;
   synced: boolean;
@@ -86,6 +87,13 @@ class Database {
         // Create profile store
         if (!db.objectStoreNames.contains(STORES.PROFILE)) {
           db.createObjectStore(STORES.PROFILE, { keyPath: 'id' });
+        }
+
+        // Create enquiries store
+        if (!db.objectStoreNames.contains(STORES.ENQUIRIES)) {
+          const enquiriesStore = db.createObjectStore(STORES.ENQUIRIES, { keyPath: '_id' });
+          enquiriesStore.createIndex('timestamp', 'timestamp', { unique: false });
+          enquiriesStore.createIndex('status', 'status', { unique: false });
         }
       };
     });

@@ -148,6 +148,17 @@ export const apiWithOffline = {
             config: config || {},
           } as AxiosResponse<T>;
         }
+
+        if (url.includes('/enquiries')) {
+          const enquiries = await syncService.getEnquiries();
+          return {
+            data: { data: enquiries } as T,
+            status: 200,
+            statusText: 'OK (from cache)',
+            headers: {},
+            config: config || {},
+          } as AxiosResponse<T>;
+        }
       }
       
       throw error;
@@ -166,6 +177,8 @@ export const apiWithOffline = {
         await syncService.syncBookings();
       } else if (url.includes('/trips') && response.data) {
         await syncService.syncTrips();
+      } else if (url.includes('/enquiries') && response.data) {
+        await syncService.syncEnquiries();
       }
       
       return response;
@@ -174,12 +187,13 @@ export const apiWithOffline = {
       if (!navigator.onLine || error.message === 'Network Error') {
         console.log('📴 Offline - queueing POST request');
         
-        const isCreation = (url === '/bookings' || url === '/trips' || url.includes('/payments')) && !url.includes('/cancel');
+        const isCreation = (url === '/bookings' || url === '/trips' || url.includes('/payments') || url.includes('/enquiries')) && !url.includes('/cancel');
         
         if (isCreation) {
-          let entity: 'booking' | 'trip' | 'payment' = 'booking';
+          let entity: 'booking' | 'trip' | 'payment' | 'enquiry' = 'booking';
           if (url.includes('/trips')) entity = 'trip';
           if (url.includes('/payments')) entity = 'payment';
+          if (url.includes('/enquiries')) entity = 'enquiry';
           
           await offlineQueue.addToSyncQueue('create', entity, data);
         } else {

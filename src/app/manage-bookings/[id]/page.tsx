@@ -14,7 +14,9 @@ import {
     Loader2,
     ChevronDown,
     ChevronUp,
-    Clock
+    Clock,
+    Download,
+    Phone
 } from "lucide-react";
 import {
     Drawer,
@@ -39,7 +41,10 @@ import { useQuery } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { PwaInstallBanner } from "@/components/pwa-install-prompt";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 function ManageBookingPage() {
     const router = useRouter();
@@ -169,6 +174,137 @@ function ManageBookingPage() {
             return sortOrder === "desc" ? -comparison : comparison;
         });
 
+    const handleDownloadPDF = () => {
+        if (!trip || !bookings.length) {
+            toast.error("No data available to download");
+            return;
+        }
+
+        try {
+            const doc = new jsPDF();
+
+            // PDF Styling constants
+            const primaryColor: [number, number, number] = [33, 150, 83]; // #219653
+
+            // Header: Title
+            doc.setFontSize(22);
+            doc.setTextColor(...primaryColor);
+            doc.text("Trip Booking Report", 14, 20);
+
+            // Trip Details Header Section
+            doc.setFontSize(12);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${format(new Date(), "dd MMM yyyy, p")}`, 14, 28);
+
+            doc.setDrawColor(230);
+            doc.line(14, 32, 196, 32);
+
+            // Trip Details Grid
+            doc.setFontSize(11);
+            doc.setTextColor(0);
+            doc.setFont("helvetica", "bold");
+            doc.text("Trip Title:", 14, 42);
+            doc.setFont("helvetica", "normal");
+            doc.text(trip.title, 45, 42);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Destination:", 14, 50);
+            doc.setFont("helvetica", "normal");
+            doc.text(trip.destination, 45, 50);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Trip Dates:", 110, 42);
+            doc.setFont("helvetica", "normal");
+            const dates = `${trip.startDate ? format(new Date(trip.startDate), "MMM dd") : "N/A"} - ${trip.endDate ? format(new Date(trip.endDate), "dd, yyyy") : "N/A"}`;
+            doc.text(dates, 140, 42);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Base Price:", 110, 50);
+            doc.setFont("helvetica", "normal");
+            doc.text(`INR ${parseFloat(trip.price).toLocaleString()}`, 140, 50);
+
+            doc.line(14, 58, 196, 58);
+
+            // Table Data Preparation
+            const columns = [
+                { header: 'No', dataKey: 'no' },
+                { header: 'Customer', dataKey: 'name' },
+                { header: 'Gender/Age', dataKey: 'info' },
+                { header: 'Contact', dataKey: 'phone' },
+                { header: 'Total (INR)', dataKey: 'total' },
+                { header: 'Paid (INR)', dataKey: 'paid' },
+                { header: 'Pending', dataKey: 'pending' },
+                { header: 'Status', dataKey: 'status' }
+            ];
+
+            const tableRows: any[] = [];
+            let customerIndex = 1;
+
+            filteredAndSortedBookings.forEach((booking: any) => {
+                const paidAmount = parseFloat(booking.netPaidAmount || booking.paidAmount || "0");
+                const totalAmount = parseFloat(booking.totalCost || booking.amount || "0");
+                const remaining = totalAmount - paidAmount;
+                const memberCount = booking.Customers?.length || 0;
+                const statusLabel = getStatusLabel(booking.status, paidAmount, totalAmount, 0);
+
+                booking.Customers?.forEach((customer: any) => {
+                    tableRows.push({
+                        no: customerIndex++,
+                        name: customer.name + (customer.isPrimary ? " (P)" : ""),
+                        info: `${customer.gender.charAt(0).toUpperCase()} / ${customer.age}`,
+                        phone: customer.contactNumber || "N/A",
+                        total: totalAmount.toLocaleString(),
+                        paid: paidAmount.toLocaleString(),
+                        pending: remaining.toLocaleString(),
+                        status: statusLabel
+                    });
+                });
+            });
+
+            // Add Table
+            autoTable(doc, {
+                startY: 65,
+                columns: columns,
+                body: tableRows,
+                headStyles: {
+                    fillColor: primaryColor,
+                    textColor: 255,
+                    fontSize: 10,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                bodyStyles: {
+                    fontSize: 9,
+                    textColor: 50
+                },
+                columnStyles: {
+                    no: { halign: 'center', cellWidth: 10 },
+                    total: { halign: 'right' },
+                    paid: { halign: 'right' },
+                    pending: { halign: 'right' },
+                    status: { halign: 'center' }
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 245, 245]
+                },
+                margin: { top: 65 },
+                didDrawPage: (data: any) => {
+                    // Footer
+                    const str = "Page " + (doc as any).internal.getNumberOfPages();
+                    doc.setFontSize(8);
+                    doc.setTextColor(150);
+                    doc.text(str, data.settings.margin.left, (doc as any).internal.pageSize.height - 10);
+                }
+            });
+
+            const fileName = `Bookings_${trip.title.replace(/\s+/g, '_')}_${format(new Date(), "yyyyMMdd")}.pdf`;
+            doc.save(fileName);
+            toast.success("PDF generated successfully");
+        } catch (error) {
+            console.error("PDF Error:", error);
+            toast.error("Failed to generate PDF");
+        }
+    };
 
 
     return (
@@ -184,12 +320,14 @@ function ManageBookingPage() {
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
                 <h1 className="text-xl font-bold text-black flex-1 text-center">Manage Bookings</h1>
-                <Button
-                    onClick={() => router.push(`/create-booking?tripId=${tripId}`)}
-                    className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-full px-4 h-9 gap-1 font-semibold"
-                >
-                    <Plus className="w-4 h-4" /> Add
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => router.push(`/create-booking?tripId=${tripId}`)}
+                        className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-full px-4 h-9 gap-1 font-semibold"
+                    >
+                        <Plus className="w-4 h-4" /> Add
+                    </Button>
+                </div>
             </div>
 
             {/* Desktop Header */}
@@ -199,12 +337,20 @@ function ManageBookingPage() {
                         <h1 className="text-3xl font-bold text-black">Manage Bookings</h1>
                         {tripLoading ? <Skeleton className="h-4 w-48 mt-1" /> : <p className="text-sm text-gray-500 mt-1">{trip?.title}</p>}
                     </div>
-                    <Button
-                        onClick={() => router.push(`/create-booking?tripId=${tripId}`)}
-                        className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-full px-6 h-12 gap-2 font-semibold"
-                    >
-                        <Plus className="w-5 h-5" /> Add Booking
-                    </Button>
+                    <div className="flex items-center gap-3">
+                        <Button
+                            onClick={() => router.push(`/expenses/${tripId}`)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 h-12 gap-2 font-semibold"
+                        >
+                            <IndianRupee className="w-5 h-5" /> Expenses
+                        </Button>
+                        <Button
+                            onClick={() => router.push(`/create-booking?tripId=${tripId}`)}
+                            className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-full px-6 h-12 gap-2 font-semibold"
+                        >
+                            <Plus className="w-5 h-5" /> Add Booking
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -410,7 +556,7 @@ function ManageBookingPage() {
                         </Popover>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-3 ml-1">
+                    <div className="flex items-center justify-between gap-2 mb-3 ml-1 pr-1">
                         {bookingsLoading ? (
                             <Skeleton className="h-4 w-20" />
                         ) : (
@@ -418,6 +564,15 @@ function ManageBookingPage() {
                                 {filteredAndSortedBookings.length} Bookings
                             </p>
                         )}
+                        <Button
+                            onClick={handleDownloadPDF}
+                            variant="ghost"
+                            size="sm"
+                            className="text-[#219653] font-bold h-8 gap-1.5 hover:bg-[#E2F1E8] rounded-full px-4"
+                        >
+                            <Download className="w-4 h-4" />
+                            Download
+                        </Button>
                     </div>
 
                     {/* Bookings List */}
@@ -509,6 +664,20 @@ function ManageBookingPage() {
                                                         ) : null}
                                                     </div>
                                                 </div>
+
+                                                {/* {primaryCustomer?.contactNumber && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-10 w-10 text-[#219653] bg-[#E2F1E8] hover:bg-[#219653] hover:text-white rounded-full transition-all active:scale-90 shrink-0"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            window.location.href = `tel:${primaryCustomer.contactNumber}`;
+                                                        }}
+                                                    >
+                                                        <Phone className="w-4 h-4" />
+                                                    </Button>
+                                                )} */}
                                             </div>
                                         </Card>
                                     );

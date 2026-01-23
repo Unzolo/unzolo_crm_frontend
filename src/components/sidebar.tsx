@@ -9,6 +9,8 @@ import {
     PlusSquare,
     User,
     LogOut,
+    IndianRupee,
+    MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -18,6 +20,8 @@ const navigation = [
     { name: "Dashboard", href: "/", icon: Home },
     { name: "Create Trip", href: "/create-trip", icon: PlusSquare },
     { name: "Manage Bookings", href: "/select-trip", icon: ClipboardCheck },
+    { name: "Manage Expenses", href: "/expenses", icon: IndianRupee },
+    { name: "Enquiries", href: "/enquiries", icon: MessageSquare },
     { name: "Profile", href: "/profile", icon: User },
 ];
 

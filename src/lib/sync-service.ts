@@ -19,6 +19,15 @@ export interface Trip {
   [key: string]: any;
 }
 
+export interface Enquiry {
+  _id: string;
+  name: string;
+  phone: string;
+  status: string;
+  timestamp?: number;
+  [key: string]: any;
+}
+
 class SyncService {
   private syncInterval: NodeJS.Timeout | null = null;
   private isSyncing: boolean = false;
@@ -78,6 +87,7 @@ class SyncService {
       await Promise.all([
         this.syncTrips(),
         this.syncBookings(),
+        this.syncEnquiries(),
         this.syncStats(),
         this.syncProfile(),
       ]);
@@ -255,6 +265,38 @@ class SyncService {
   }
 
   /**
+   * Sync enquiries from API to local storage
+   */
+  async syncEnquiries(): Promise<void> {
+    try {
+      const response = await api.get('/enquiries');
+      let enquiries: any[] = [];
+      
+      if (Array.isArray(response.data)) {
+        enquiries = response.data;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        enquiries = response.data.data;
+      }
+
+      if (enquiries.length === 0) {
+        console.log('📭 No enquiries to sync');
+        return;
+      }
+
+      const enquiriesWithTimestamp = enquiries.map((enquiry: any) => ({
+        ...enquiry,
+        _id: enquiry._id || enquiry.id || `enquiry-${Date.now()}-${Math.random()}`,
+        timestamp: Date.now(),
+      }));
+
+      await db.putMany(STORES.ENQUIRIES, enquiriesWithTimestamp);
+      console.log(`✅ Synced ${enquiries.length} enquiries to local storage`);
+    } catch (error) {
+      console.error('❌ Failed to sync enquiries:', error);
+    }
+  }
+
+  /**
    * Sync a single booking by ID
    */
   async syncBooking(bookingId: string): Promise<void> {
@@ -351,6 +393,31 @@ class SyncService {
   }
 
   /**
+   * Get enquiries from local storage (with fallback to API)
+   */
+  async getEnquiries(): Promise<Enquiry[]> {
+    try {
+      const localEnquiries = await db.getAll<Enquiry>(STORES.ENQUIRIES);
+      if (localEnquiries.length > 0) {
+        if (navigator.onLine) {
+          this.syncEnquiries().catch(console.error);
+        }
+        return localEnquiries;
+      }
+
+      if (navigator.onLine) {
+        await this.syncEnquiries();
+        return await db.getAll<Enquiry>(STORES.ENQUIRIES);
+      }
+
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to get enquiries:', error);
+      return [];
+    }
+  }
+
+  /**
    * Get a single booking from local storage (with fallback to API)
    */
   async getBooking(bookingId: string): Promise<Booking | null> {
@@ -389,6 +456,7 @@ class SyncService {
     await Promise.all([
       db.clear(STORES.TRIPS),
       db.clear(STORES.BOOKINGS),
+      db.clear(STORES.ENQUIRIES),
       db.clear(STORES.STATS),
       db.clear(STORES.PROFILE),
     ]);

@@ -10,7 +10,9 @@ import {
   User,
   LogOut,
   Loader2,
-  Pencil
+  Pencil,
+  MessageSquare,
+  Clock
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,6 +115,19 @@ function DashboardPage() {
       description: "View and manage booking for packages",
       icon: <ClipboardCheck className="w-6 h-6 text-white" />,
       onClick: () => router.push("/select-trip"),
+    },
+    {
+      title: "Manage Expenses",
+      description: "Track and manage trip expenses",
+      icon: <IndianRupee className="w-6 h-6 text-white" />,
+      onClick: () => router.push("/expenses"),
+    },
+    {
+      title: "Enquiry Management",
+      description: "Track leads and follow-ups",
+      icon: <MessageSquare className="w-6 h-6 text-white" />,
+      onClick: () => router.push("/enquiries"),
+      isComingSoon: true
     },
   ];
 
@@ -224,7 +239,16 @@ function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex flex-col items-start text-left min-w-0 flex-1">
-                    <span className="text-sm lg:text-lg font-bold text-black leading-tight truncate w-full group-hover:text-[#219653] transition-colors">{action.title}</span>
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="text-sm lg:text-lg font-bold text-black leading-tight truncate group-hover:text-[#219653] transition-colors">
+                        {action.title}
+                      </span>
+                      {(action as any).isComingSoon && (
+                        <Badge className="bg-[#219653] text-white text-[8px] lg:text-[10px] h-4 lg:h-5 rounded-full px-1.5 lg:px-2 shrink-0 border-none">
+                          Coming Soon
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-[10px] lg:text-sm text-gray-500 font-medium mt-1 leading-tight line-clamp-2">{action.description}</p>
                   </div>
                 </Card>

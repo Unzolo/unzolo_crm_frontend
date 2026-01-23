@@ -63,7 +63,7 @@ class OfflineQueueManager {
    */
   async addToSyncQueue(
     action: 'create' | 'update' | 'delete',
-    entity: 'booking' | 'trip' | 'payment',
+    entity: 'booking' | 'trip' | 'payment' | 'enquiry',
     data: any
   ): Promise<string> {
     const id = this.generateId();
@@ -204,6 +204,16 @@ class OfflineQueueManager {
       case 'payment':
         if (item.action === 'create') {
           await api.post(`/bookings/${item.data.bookingId}/payments`, item.data);
+        }
+        break;
+
+      case 'enquiry':
+        if (item.action === 'create') {
+          await api.post('/enquiries', item.data);
+        } else if (item.action === 'update') {
+          await api.patch(`/enquiries/${item.data._id}`, item.data);
+        } else if (item.action === 'delete') {
+          await api.delete(`/enquiries/${item.data._id}`);
         }
         break;
     }
