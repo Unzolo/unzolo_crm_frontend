@@ -10,7 +10,9 @@ import {
     XCircle,
     Loader2,
     Calendar,
-    ArrowRight
+    ArrowRight,
+    History,
+    CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,7 +43,16 @@ function SubscriptionPage() {
         },
     });
 
+    const { data: historyResponse } = useQuery({
+        queryKey: ["subscription-history"],
+        queryFn: async () => {
+            const response = await apiWithOffline.get("/subscriptions/history");
+            return response.data;
+        },
+    });
+
     const partner = profileResponse?.data;
+    const history = historyResponse?.data || [];
     const [isProcessing, setIsProcessing] = useState(false);
 
     const loadRazorpay = () => {
@@ -71,7 +82,7 @@ function SubscriptionPage() {
             const order = orderRes.data.data;
 
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ,
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                 amount: order.amount,
                 currency: order.currency,
                 name: "Unzolo CRM",
@@ -303,6 +314,40 @@ function SubscriptionPage() {
                             </Card>
                         ))}
                     </div>
+
+                    {/* Purchase History */}
+                    {history.length > 0 && (
+                        <div className="space-y-4 pt-10">
+                            <div className="flex items-center gap-2 mb-2">
+                                <History className="w-5 h-5 text-gray-400" />
+                                <h3 className="text-lg font-black text-black">Purchase History</h3>
+                            </div>
+
+                            <div className="space-y-3">
+                                {history.map((item: any) => (
+                                    <Card key={item.id} className="p-4 rounded-2xl border-none ring-1 ring-gray-100 flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                                            <CreditCard className="w-5 h-5 text-gray-400" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between mb-0.5">
+                                                <p className="text-sm font-bold text-black capitalize">{item.plan} Plan</p>
+                                                <p className="text-sm font-black text-[#219653]">₹{item.amount}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                                    {format(new Date(item.createdAt), "dd MMM yyyy")}
+                                                </p>
+                                                <Badge className="bg-green-50 text-[#219653] border-none text-[8px] h-4">
+                                                    SUCCESS
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <p className="text-center text-[10px] text-gray-400 font-medium pb-10">
                         By subscribing, you agree to our Terms of Service and Privacy Policy.
