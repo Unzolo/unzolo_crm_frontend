@@ -174,74 +174,76 @@ function AdminPartnerDetailsPage() {
             <div className="flex-1 bg-white rounded-t-[30px] lg:rounded-none p-4 lg:p-8 shadow-2xl lg:shadow-none overflow-y-auto">
                 <div className="max-w-6xl mx-auto space-y-8 pb-10">
 
-                    {/* Subscription & Access Management */}
-                    <Card className="p-6 rounded-2xl border-none ring-1 ring-gray-100 shadow-sm bg-white overflow-hidden">
-                        <div className="flex items-center gap-2 mb-6">
-                            <ShieldCheck className="w-5 h-5 text-[#219653]" />
-                            <h3 className="text-lg font-bold text-black">Subscription & Access</h3>
-                        </div>
+                    {/* Subscription & Access Management (Testing Only) */}
+                    {partner.email === 'muhammedrafeeqvr805@gmail.com' && (
+                        <Card className="p-6 rounded-2xl border-none ring-1 ring-gray-100 shadow-sm bg-white overflow-hidden">
+                            <div className="flex items-center gap-2 mb-6">
+                                <ShieldCheck className="w-5 h-5 text-[#219653]" />
+                                <h3 className="text-lg font-bold text-black">Subscription & Access</h3>
+                            </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pricing Plan</label>
-                                <div className="flex gap-2">
-                                    {(['free', 'pro'] as const).map((plan) => (
-                                        <Button
-                                            key={plan}
-                                            size="sm"
-                                            variant={partner.plan === plan ? "default" : "outline"}
-                                            className={cn(
-                                                "flex-1 h-10 rounded-xl text-xs font-bold uppercase",
-                                                partner.plan === plan ? "bg-[#219653] hover:bg-[#1b7a43]" : "text-gray-400 border-gray-100"
-                                            )}
-                                            onClick={() => subscriptionMutation.mutate({ plan })}
-                                            disabled={subscriptionMutation.isPending}
-                                        >
-                                            {plan}
-                                        </Button>
-                                    ))}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pricing Plan</label>
+                                    <div className="flex gap-2">
+                                        {(['free', 'pro'] as const).map((plan) => (
+                                            <Button
+                                                key={plan}
+                                                size="sm"
+                                                variant={partner.plan === plan ? "default" : "outline"}
+                                                className={cn(
+                                                    "flex-1 h-10 rounded-xl text-xs font-bold uppercase",
+                                                    partner.plan === plan ? "bg-[#219653] hover:bg-[#1b7a43]" : "text-gray-400 border-gray-100"
+                                                )}
+                                                onClick={() => subscriptionMutation.mutate({ plan })}
+                                                disabled={subscriptionMutation.isPending}
+                                            >
+                                                {plan}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">WhatsApp Notifications</label>
+                                    <Button
+                                        variant={partner.isWhatsappEnabled ? "default" : "outline"}
+                                        className={cn(
+                                            "w-full h-10 rounded-xl text-xs font-bold uppercase transition-all",
+                                            partner.isWhatsappEnabled ? "bg-green-500 hover:bg-green-600 shadow-lg shadow-green-100" : "text-gray-400 border-gray-100"
+                                        )}
+                                        onClick={() => subscriptionMutation.mutate({ isWhatsappEnabled: !partner.isWhatsappEnabled })}
+                                        disabled={subscriptionMutation.isPending}
+                                    >
+                                        <MessageSquare className="w-4 h-4 mr-2" />
+                                        {partner.isWhatsappEnabled ? "Enabled" : "Disabled"}
+                                    </Button>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Valid Until</label>
+                                    <div className="relative">
+                                        <Input
+                                            type="date"
+                                            defaultValue={partner.subscriptionExpires ? format(new Date(partner.subscriptionExpires), "yyyy-MM-dd") : ""}
+                                            onBlur={(e) => {
+                                                const val = e.target.value;
+                                                if (val) subscriptionMutation.mutate({ subscriptionExpires: new Date(val).toISOString() });
+                                            }}
+                                            className="h-10 bg-gray-50 border-none rounded-xl text-sm font-medium focus-visible:ring-[#219653]"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">WhatsApp Notifications</label>
-                                <Button
-                                    variant={partner.isWhatsappEnabled ? "default" : "outline"}
-                                    className={cn(
-                                        "w-full h-10 rounded-xl text-xs font-bold uppercase transition-all",
-                                        partner.isWhatsappEnabled ? "bg-green-500 hover:bg-green-600 shadow-lg shadow-green-100" : "text-gray-400 border-gray-100"
-                                    )}
-                                    onClick={() => subscriptionMutation.mutate({ isWhatsappEnabled: !partner.isWhatsappEnabled })}
-                                    disabled={subscriptionMutation.isPending}
-                                >
-                                    <MessageSquare className="w-4 h-4 mr-2" />
-                                    {partner.isWhatsappEnabled ? "Enabled" : "Disabled"}
-                                </Button>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Valid Until</label>
-                                <div className="relative">
-                                    <Input
-                                        type="date"
-                                        defaultValue={partner.subscriptionExpires ? format(new Date(partner.subscriptionExpires), "yyyy-MM-dd") : ""}
-                                        onBlur={(e) => {
-                                            const val = e.target.value;
-                                            if (val) subscriptionMutation.mutate({ subscriptionExpires: new Date(val).toISOString() });
-                                        }}
-                                        className="h-10 bg-gray-50 border-none rounded-xl text-sm font-medium focus-visible:ring-[#219653]"
-                                    />
+                            {partner.plan === 'pro' && !partner.subscriptionExpires && (
+                                <div className="mt-4 p-3 bg-red-50 rounded-xl border border-red-100 flex items-center gap-3">
+                                    <XCircle className="w-4 h-4 text-red-500" />
+                                    <span className="text-xs font-bold text-red-600">Pro plan active but no expiry date set.</span>
                                 </div>
-                            </div>
-                        </div>
-
-                        {partner.plan === 'pro' && !partner.subscriptionExpires && (
-                            <div className="mt-4 p-3 bg-red-50 rounded-xl border border-red-100 flex items-center gap-3">
-                                <XCircle className="w-4 h-4 text-red-500" />
-                                <span className="text-xs font-bold text-red-600">Pro plan active but no expiry date set.</span>
-                            </div>
-                        )}
-                    </Card>
+                            )}
+                        </Card>
+                    )}
 
                     {/* Partner Info Card */}
                     <Card className="p-4 rounded-2xl border-none ring-1 ring-gray-100 shadow-sm mb-4 bg-white relative">
