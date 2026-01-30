@@ -13,7 +13,8 @@ import {
   Pencil,
   MessageSquare,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  Users
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -140,12 +141,17 @@ function DashboardPage() {
       icon: <IndianRupee className="w-6 h-6 text-white" />,
       onClick: () => router.push("/expenses"),
     },
+    // {
+    //   title: "Enquiry Management",
+    //   description: "Track leads and follow-ups",
+    //   icon: <MessageSquare className="w-6 h-6 text-white" />,
+    //   onClick: () => router.push("/enquiries"),
+    // },
     {
-      title: "Enquiry Management",
-      description: "Track leads and follow-ups",
-      icon: <MessageSquare className="w-6 h-6 text-white" />,
-      onClick: () => router.push("/enquiries"),
-      isComingSoon: true
+      title: "Customer Management",
+      description: "View history of all previous travelers",
+      icon: <Users className="w-6 h-6 text-white" />,
+      onClick: () => router.push("/customers"),
     },
     ...(isAdmin ? [{
       title: "Admin Platform",

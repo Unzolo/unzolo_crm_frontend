@@ -58,6 +58,7 @@ function BookingDetailsPage() {
     const [paymentType, setPaymentType] = useState<"advance" | "balance" | "custom">("balance");
     const [customAmount, setCustomAmount] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("gpay");
+    const [concessionAmount, setConcessionAmount] = useState("");
     const [isDesktop, setIsDesktop] = useState(false);
 
     useEffect(() => {
@@ -79,6 +80,12 @@ function BookingDetailsPage() {
     });
 
     const booking = bookingResponse?.data;
+
+    useEffect(() => {
+        if (booking && isUpdatePaymentOpen) {
+            setConcessionAmount(booking.concessionAmount?.toString() || "");
+        }
+    }, [isUpdatePaymentOpen, booking]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -108,21 +115,25 @@ function BookingDetailsPage() {
         mutationFn: async () => {
             if (!paymentDate) throw new Error("Payment date is required");
 
+            const oldConcession = parseFloat(booking?.concessionAmount || "0");
+            const newConcession = parseFloat(concessionAmount || "0");
+            const currentRemaining = parseFloat(booking.remainingAmount);
+            const adjustedRemaining = currentRemaining + (oldConcession - newConcession);
+
             let finalAmount = 0;
-            const remaining = parseFloat(booking.remainingAmount);
 
             if (paymentType === "balance") {
-                finalAmount = remaining;
+                finalAmount = adjustedRemaining;
             } else {
                 finalAmount = parseFloat(customAmount);
             }
 
-            if (isNaN(finalAmount) || finalAmount <= 0) {
+            if (isNaN(finalAmount) || (finalAmount < 0 && paymentType === "custom")) {
                 throw new Error("Please enter a valid amount");
             }
 
-            if (finalAmount > remaining) {
-                throw new Error(`Amount cannot exceed the remaining balance of ₹${remaining.toLocaleString()}`);
+            if (finalAmount > adjustedRemaining + 0.01) { // Add small tolerance for floats
+                throw new Error(`Amount cannot exceed the remaining balance of ₹${adjustedRemaining.toLocaleString()}`);
             }
 
             const formData = new FormData();
@@ -130,6 +141,10 @@ function BookingDetailsPage() {
             formData.append("paymentType", paymentType);
             formData.append("paymentMethod", paymentMethod);
             formData.append("paymentDate", paymentDate.toISOString());
+
+            if (concessionAmount !== undefined) {
+                formData.append("concessionAmount", concessionAmount);
+            }
 
             if (selectedFile) {
                 formData.append("screenshot", selectedFile);
@@ -144,6 +159,7 @@ function BookingDetailsPage() {
             toast.success("Payment added successfully");
             setIsUpdatePaymentOpen(false);
             setCustomAmount("");
+            setConcessionAmount("");
             setSelectedFile(null);
             setImagePreview(null);
             queryClient.invalidateQueries({ queryKey: ["booking", id] });
@@ -291,13 +307,24 @@ function BookingDetailsPage() {
                             <div className="grid grid-cols-2 gap-y-4">
                                 {/* Header: Target vs Collected */}
                                 <div className="space-y-0.5">
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold">Total Amount</p>
-                                    <p className="text-xl font-bold text-[#219653]">₹{parseFloat(booking?.totalCost || "0").toLocaleString()}</p>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold">Original Amount</p>
+                                    <p className="text-xl font-bold text-gray-500">₹{(parseFloat(booking?.totalCost || "0") + parseFloat(booking?.concessionAmount || "0")).toLocaleString()}</p>
                                 </div>
                                 <div className="space-y-0.5 text-right">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest font-extrabold">Paid so far</p>
-                                    <p className="text-xl font-bold text-black">₹{parseFloat(booking?.paidAmount || "0").toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-[#219653]">₹{parseFloat(booking?.paidAmount || "0").toLocaleString()}</p>
                                 </div>
+
+                                {/* Concession if any */}
+                                {parseFloat(booking?.concessionAmount || "0") > 0 && (
+                                    <div className="col-span-2 flex items-center justify-between py-2 px-3 bg-[#EE5A6F]/5 rounded-xl border border-[#EE5A6F]/10">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-4 bg-[#EE5A6F] rounded-full" />
+                                            <p className="text-[10px] text-[#EE5A6F] uppercase font-bold tracking-tight">Concession Applied</p>
+                                        </div>
+                                        <p className="text-sm font-bold text-[#EE5A6F]">-₹{parseFloat(booking?.concessionAmount || "0").toLocaleString()}</p>
+                                    </div>
+                                )}
 
                                 {/* Intermediate: Refund if any */}
                                 {parseFloat(booking?.refundAmount || "0") > 0 && (
@@ -468,7 +495,10 @@ function BookingDetailsPage() {
                                         <p className="text-xs text-gray-400 font-medium">Pay complete remaining amount</p>
                                     </div>
                                 </div>
-                                <span className="text-lg font-bold text-[#219653]">₹{booking?.remainingAmount}</span>
+                                <span className="text-lg font-bold text-[#219653]">₹{Math.max(0,
+                                    parseFloat(booking?.remainingAmount || "0") +
+                                    (parseFloat(booking?.concessionAmount || "0") - (parseFloat(concessionAmount) || 0))
+                                ).toLocaleString()}</span>
                             </Card>
 
 
@@ -501,6 +531,27 @@ function BookingDetailsPage() {
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            {/* Concession Field */}
+                            <Card className="p-4 border-none shadow-none bg-[#EE5A6F]/5 rounded-2xl flex flex-col gap-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-6 bg-[#EE5A6F] rounded-br-full rounded-tr-full" />
+                                    <h3 className="text-base font-bold text-black tracking-tight">Update Concession</h3>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <p className="text-[11px] text-gray-500 font-medium ml-1">Current Concession: ₹{booking?.concessionAmount || 0}</p>
+                                    <div className="relative">
+                                        <Input
+                                            value={concessionAmount}
+                                            onChange={(e) => setConcessionAmount(e.target.value)}
+                                            type="number"
+                                            placeholder="Enter total concession amount"
+                                            className="h-12 bg-white border-[#EE5A6F]/20 rounded-xl pl-10 focus-visible:ring-[#EE5A6F] font-bold text-[#EE5A6F]"
+                                        />
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#EE5A6F] font-bold">₹</div>
                                     </div>
                                 </div>
                             </Card>
@@ -599,22 +650,26 @@ function BookingDetailsPage() {
                         <Button
                             className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg shadow-lg shadow-green-100"
                             onClick={() => {
-                                const remaining = parseFloat(booking.remainingAmount);
+                                const oldConcession = parseFloat(booking?.concessionAmount || "0");
+                                const newConcession = parseFloat(concessionAmount || "0");
+                                const currentRemaining = parseFloat(booking.remainingAmount);
+                                const adjustedRemaining = currentRemaining + (oldConcession - newConcession);
+
                                 let finalAmount = 0;
 
                                 if (paymentType === "balance") {
-                                    finalAmount = remaining;
+                                    finalAmount = adjustedRemaining;
                                 } else {
                                     finalAmount = parseFloat(customAmount);
                                 }
 
-                                if (isNaN(finalAmount) || finalAmount <= 0) {
+                                if (isNaN(finalAmount) || (finalAmount < 0 && paymentType === "custom")) {
                                     toast.error("Please enter a valid amount");
                                     return;
                                 }
 
-                                if (finalAmount > remaining) {
-                                    toast.error(`Amount cannot exceed the remaining balance of ₹${remaining.toLocaleString()}`);
+                                if (finalAmount > adjustedRemaining + 0.01) {
+                                    toast.error(`Amount cannot exceed the remaining balance of ₹${adjustedRemaining.toLocaleString()}`);
                                     return;
                                 }
 

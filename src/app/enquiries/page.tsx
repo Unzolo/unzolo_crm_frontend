@@ -41,8 +41,7 @@ function EnquiriesPage() {
         },
     });
 
-    const userName = profileResponse?.data?.email?.toLowerCase() || "";
-    const hasAccess = userName === "muhammedrafeeqvr805@gmail.com";
+    const hasAccess = !!profileResponse?.data;
 
     // Fetch Enquiries
     const { data: enquiriesResponse, isLoading: enquiriesLoading } = useQuery({
@@ -70,75 +69,6 @@ function EnquiriesPage() {
         );
     }
 
-    // Access Control: If not koodam, show Under Development
-    if (!hasAccess) {
-        return (
-            <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
-                {/* Mobile Header */}
-                <div className="p-4 flex items-center justify-between lg:hidden">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-black hover:bg-transparent px-0">
-                        <ArrowLeft className="w-6 h-6" />
-                    </Button>
-                    <h1 className="text-xl font-bold text-black flex-1 text-center">Enquiries</h1>
-                    <div className="w-6" />
-                </div>
-
-                {/* Desktop Header */}
-                <div className="hidden lg:block p-6 bg-white border-b border-gray-200">
-                    <div className="max-w-5xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-black">
-                                <ArrowLeft className="w-6 h-6" />
-                            </Button>
-                            <h1 className="text-3xl font-bold text-black">Enquiry Management</h1>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Under Development UI */}
-                <div className="flex-1 bg-white rounded-t-[30px] lg:rounded-none p-6 flex flex-col items-center justify-center text-center">
-                    <div className="max-w-md w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="w-24 h-24 bg-[#E2F1E8] rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-[#219653]/5">
-                            <Construction className="w-12 h-12 text-[#219653]" />
-                        </div>
-                        <h2 className="text-2xl font-black text-black mb-4">Under Development</h2>
-                        <Card className="p-6 border-none shadow-xl ring-1 ring-gray-100 rounded-lg bg-white relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4">
-                                <Clock className="w-5 h-5 text-[#219653] animate-pulse" />
-                            </div>
-                            <div className="flex items-center justify-center w-12 h-12 bg-[#219653] rounded-lg mb-4 text-white">
-                                <MessageSquare className="w-6 h-6" />
-                            </div>
-                            <p className="text-gray-500 font-medium leading-relaxed mb-6">
-                                We're crafting a powerful enquiry management system to help you track leads, manage follow-ups, and convert customers effortlessly.
-                            </p>
-                            <div className="space-y-4">
-                                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-[#219653] w-[65%] rounded-full animate-progress" />
-                                </div>
-                                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                                    <span>Developing Features</span>
-                                    <span className="text-[#219653]">65% Complete</span>
-                                </div>
-                            </div>
-                        </Card>
-                        <Button
-                            onClick={() => router.push("/")}
-                            className="mt-8 bg-[#219653] hover:bg-[#1A7B44] text-white rounded-full px-8 h-12 gap-2 font-bold shadow-lg shadow-[#219653]/20"
-                        >
-                            Return to Dashboard
-                        </Button>
-                    </div>
-                </div>
-                <style jsx>{`
-                    @keyframes progress { from { width: 0; } to { width: 65%; } }
-                    .animate-progress { animation: progress 1.5s ease-out forwards; }
-                `}</style>
-            </div>
-        );
-    }
-
-    // Real UI for "koodam"
     return (
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
             {/* Header */}

@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
     Popover,
     PopoverContent,
@@ -139,6 +140,36 @@ function CreateBookingPage() {
     });
 
     const trip = tripResponse?.data;
+
+    // Fetch All Customers for Suggestions
+    const { data: customersResponse } = useQuery({
+        queryKey: ["all-customers"],
+        queryFn: async () => {
+            const response = await apiWithOffline.get("/customers");
+            return response.data;
+        },
+    });
+
+    const allCustomers = customersResponse?.data || [];
+    const [activeSuggestionIndex, setActiveSuggestionIndex] = useState<number | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const filteredSuggestions = allCustomers.filter((c: any) =>
+    (c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.contactNumber?.includes(searchQuery))
+    ).slice(0, 5);
+
+    const handleSelectSuggestion = (index: number, customer: any) => {
+        setValue(`members.${index}.name`, customer.name, { shouldValidate: true });
+        setValue(`members.${index}.gender`, customer.gender, { shouldValidate: true });
+        setValue(`members.${index}.age`, customer.age, { shouldValidate: true });
+        if (index === 0) {
+            setValue(`members.${index}.contactNumber`, customer.contactNumber, { shouldValidate: true });
+        }
+        setActiveSuggestionIndex(null);
+        setSearchQuery("");
+    };
+
     const paymentType = watch("paymentType");
     const members = watch("members");
     const memberCountValue = watch("memberCount");
@@ -480,16 +511,52 @@ function CreateBookingPage() {
                                     </div>
 
                                     <div className="grid grid-cols-12 gap-x-4 gap-y-4 pt-0">
-                                        <div className="col-span-9 space-y-1.5">
+                                        <div className="col-span-9 space-y-1.5 relative">
                                             <label className="text-xs font-bold text-black ml-1">Full Name</label>
-                                            <Input
-                                                {...register(`members.${index}.name`)}
-                                                placeholder="Enter Name"
-                                                className={cn(
-                                                    "h-12 placeholder:text-sm mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
-                                                    errors.members?.[index]?.name && "border-red-500 focus-visible:ring-red-500"
+                                            <div className="relative">
+                                                <Input
+                                                    {...register(`members.${index}.name`)}
+                                                    onChange={(e) => {
+                                                        register(`members.${index}.name`).onChange(e);
+                                                        setSearchQuery(e.target.value);
+                                                        setActiveSuggestionIndex(index);
+                                                    }}
+                                                    onFocus={() => setActiveSuggestionIndex(index)}
+                                                    placeholder="Enter Name"
+                                                    className={cn(
+                                                        "h-12 placeholder:text-sm mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
+                                                        errors.members?.[index]?.name && "border-red-500 focus-visible:ring-red-500"
+                                                    )}
+                                                />
+                                                {activeSuggestionIndex === index && searchQuery.length > 1 && filteredSuggestions.length > 0 && (
+                                                    <Card className="absolute z-50 w-full mt-1 border-[#E2F1E8] shadow-xl rounded-lg overflow-hidden bg-white py-0">
+                                                        <div className="p-1">
+                                                            {filteredSuggestions.map((customer: any) => (
+                                                                <button
+                                                                    key={customer.id}
+                                                                    type="button"
+                                                                    className="w-full text-left px-3 py-2 hover:bg-[#E2F1E8] rounded-lg transition-colors flex flex-col gap-0.5"
+                                                                    onClick={() => handleSelectSuggestion(index, customer)}
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="text-sm font-bold text-black">{customer.name}</span>
+                                                                        <Badge variant="outline" className="text-[8px] bg-[#219653]/10 text-[#219653] border-none">Past Traveler</Badge>
+                                                                    </div>
+                                                                    <span className="text-[10px] text-gray-400 font-medium">
+                                                                        {customer.contactNumber} • {customer.gender}, {customer.age}y
+                                                                    </span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </Card>
                                                 )}
-                                            />
+                                                {activeSuggestionIndex === index && (
+                                                    <div
+                                                        className="fixed inset-0 z-40"
+                                                        onClick={() => setActiveSuggestionIndex(null)}
+                                                    />
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="col-span-3 space-y-1.5">
                                             <label className="text-xs font-bold text-black ml-1">Gender</label>
@@ -497,7 +564,7 @@ function CreateBookingPage() {
                                                 control={control}
                                                 name={`members.${index}.gender`}
                                                 render={({ field }) => (
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
                                                         <SelectTrigger className="h-12 mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]">
                                                             <SelectValue placeholder="Select" />
                                                         </SelectTrigger>
