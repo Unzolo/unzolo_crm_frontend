@@ -11,10 +11,13 @@ import {
     Pencil,
     Check,
     X,
-    Loader2
+    Loader2,
+    Zap,
+    ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
@@ -189,6 +192,35 @@ function ProfilePage() {
                                         </Card>
                                     </div>
                                 </div>
+
+                                {/* Subscription Section (Testing Only) */}
+                                {user.email === 'muhammedrafeeqvr805@gmail.com' && (
+                                    <div className="space-y-3 pt-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                                            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Subscription</h3>
+                                        </div>
+
+                                        <Card
+                                            className="p-4 border-none bg-[#219653]/5 hover:bg-[#219653]/10 rounded-lg shadow-none cursor-pointer group transition-all"
+                                            onClick={() => router.push("/subscription")}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                                                    <Zap className="w-5 h-5 text-[#219653] fill-[#219653]" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Current Plan</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-sm font-black text-black capitalize">{user.plan || 'Free'} Plan</p>
+                                                        {user.plan === 'pro' && <Badge className="bg-[#219653] text-[8px] h-3 px-1">ACTIVE</Badge>}
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#219653] transform group-hover:translate-x-1 transition-all" />
+                                            </div>
+                                        </Card>
+                                    </div>
+                                )}
 
                                 {/* Workplace Info */}
                                 <div className="space-y-3 pt-2">
