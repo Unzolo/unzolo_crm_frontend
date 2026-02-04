@@ -474,6 +474,24 @@ function TripCard({ trip, onClick, onEdit, onDelete, router }: { trip: any, onCl
                     >
                         <Pencil className="w-3.5 h-3.5" />
                     </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const bookingCount = trip.bookingCount || 0;
+                            const message = bookingCount > 0
+                                ? `This trip has ${bookingCount} active booking(s). Deleting it will hide it from new bookings, but existing bookings will remain. Are you sure?`
+                                : "Are you sure you want to delete this trip?";
+
+                            if (window.confirm(message)) {
+                                onDelete();
+                            }
+                        }}
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                 </div>
             </div>
 

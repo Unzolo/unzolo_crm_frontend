@@ -12,7 +12,8 @@ import {
     X,
     Landmark,
     Check,
-    Loader2
+    Loader2,
+    Pencil
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -46,6 +47,20 @@ import { withAuth } from "@/components/auth/with-auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { toast } from "sonner";
+import { useForm, Controller, SubmitHandler } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const participantSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(2, "Name is required"),
+    gender: z.enum(["male", "female", "other"]),
+    age: z.coerce.number().min(1, "Age is required"),
+    contactNumber: z.string().optional(),
+    isPrimary: z.boolean().default(false),
+});
+
+type ParticipantValues = z.infer<typeof participantSchema>;
 
 function BookingDetailsPage() {
     const router = useRouter();
@@ -60,6 +75,19 @@ function BookingDetailsPage() {
     const [paymentMethod, setPaymentMethod] = useState("gpay");
     const [concessionAmount, setConcessionAmount] = useState("");
     const [isDesktop, setIsDesktop] = useState(false);
+    const [isEditParticipantOpen, setIsEditParticipantOpen] = useState(false);
+    const [editingParticipant, setEditingParticipant] = useState<any>(null);
+
+    const { control, handleSubmit, reset, setValue, formState: { errors } } = useForm<ParticipantValues>({
+        resolver: zodResolver(participantSchema) as any,
+        defaultValues: {
+            name: "",
+            gender: "male",
+            age: 0,
+            contactNumber: "",
+            isPrimary: false,
+        }
+    });
 
     useEffect(() => {
         const checkDesktop = () => {
@@ -178,6 +206,52 @@ function BookingDetailsPage() {
         },
     });
 
+    const updateParticipantsMutation = useMutation({
+        mutationFn: async (participants: any[]) => {
+            const response = await apiWithOffline.put(`/bookings/${id}/participants`, { participants });
+            return response.data;
+        },
+        onSuccess: () => {
+            toast.success("Participants updated successfully");
+            setIsEditParticipantOpen(false);
+            setEditingParticipant(null);
+            queryClient.invalidateQueries({ queryKey: ["booking", id] });
+        },
+        onError: (error: any) => {
+            const errorMessage = error.response?.data?.message || error.message || "Failed to update participants";
+            toast.error(errorMessage);
+        },
+    });
+
+    const onParticipantSubmit: SubmitHandler<ParticipantValues> = (values) => {
+        updateParticipantsMutation.mutate([values]);
+    };
+
+    const handleEditParticipant = (participant: any) => {
+        setEditingParticipant(participant);
+        reset({
+            id: participant.id,
+            name: participant.name,
+            gender: participant.gender,
+            age: participant.age,
+            contactNumber: participant.contactNumber || "",
+            isPrimary: participant.isPrimary || false,
+        });
+        setIsEditParticipantOpen(true);
+    };
+
+    const handleAddDetails = () => {
+        setEditingParticipant(null);
+        reset({
+            name: "",
+            gender: "male",
+            age: 0,
+            contactNumber: "",
+            isPrimary: false,
+        });
+        setIsEditParticipantOpen(true);
+    };
+
 
 
     if (!isLoading && !booking) {
@@ -268,9 +342,20 @@ function BookingDetailsPage() {
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
-                                        <span className="text-[10px] text-gray-400 font-bold uppercase">
-                                            {p.isPrimary ? "Primary" : "Member"}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-gray-400 hover:text-[#219653] hover:bg-[#E2F1E8] rounded-full"
+                                                onClick={() => handleEditParticipant(p)}
+                                                disabled={p.status === 'cancelled'}
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <span className="text-[10px] text-gray-400 font-bold uppercase">
+                                                {p.isPrimary ? "Primary" : "Member"}
+                                            </span>
+                                        </div>
                                         {p.status === 'cancelled' && (
                                             <Badge variant="destructive" className="text-[8px] px-2 py-0 h-4 bg-red-100 text-red-600 border-none shadow-none uppercase font-bold">
                                                 Cancelled
@@ -280,18 +365,24 @@ function BookingDetailsPage() {
                                 </Card>
                             ))}
                             {booking?.Trip?.type === 'package' && (booking.totalMemberCount || booking.memberCount || 0) > (booking.Customers?.length || 0) && (
-                                <Card className="p-4 rounded-2xl flex flex-row justify-between shadow-none bg-gray-50/30 border-dashed border-2 border-gray-100">
+                                <Card
+                                    className="p-4 rounded-2xl flex flex-row justify-between shadow-none bg-gray-50/30 border-dashed border-2 border-gray-100 cursor-pointer hover:bg-gray-100/50 transition-colors"
+                                    onClick={handleAddDetails}
+                                >
                                     <div className="flex flex-row gap-3 items-center">
                                         <div className="w-9 h-9 rounded-full bg-white/50 flex items-center justify-center">
-                                            <Users className="w-5 h-5 text-gray-300" />
+                                            <Plus className="w-5 h-5 text-gray-300" />
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-gray-400">
-                                                + {(booking.totalMemberCount || booking.memberCount || 0) - (booking.Customers?.length || 0)} Other Members
+                                                Add Details for {(booking.totalMemberCount || booking.memberCount || 0) - (booking.Customers?.length || 0)} Members
                                             </p>
                                             <p className="text-[10px] text-gray-300 font-medium uppercase tracking-tight">Unnamed Participants</p>
                                         </div>
                                     </div>
+                                    <Button variant="ghost" size="icon" className="text-gray-300">
+                                        <Plus className="w-5 h-5" />
+                                    </Button>
                                 </Card>
                             )}
                         </div>
@@ -687,6 +778,144 @@ function BookingDetailsPage() {
                             )}
                         </Button>
                     </div>
+                </DrawerContent>
+            </Drawer>
+
+            {/* Edit Participant Drawer */}
+            <Drawer open={isEditParticipantOpen} onOpenChange={setIsEditParticipantOpen} direction={isDesktop ? "right" : "bottom"}>
+                <DrawerContent className={cn(
+                    "bg-white px-0 outline-none border-none",
+                    isDesktop ? "h-full w-[600px] p-4" : "rounded-t-[40px] max-h-[96vh]"
+                )}>
+                    <form onSubmit={handleSubmit(onParticipantSubmit)} className="flex flex-col h-full">
+                        <div className="overflow-y-auto px-6 pb-32">
+                            <DrawerHeader className="p-0 mb-6 text-center">
+                                <DrawerTitle className="text-lg pt-4 font-bold text-black my-1">
+                                    {editingParticipant ? "Edit Participant" : "Add Participant Details"}
+                                </DrawerTitle>
+                            </DrawerHeader>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-black ml-1">Full Name</label>
+                                    <Controller
+                                        control={control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <Input
+                                                {...field}
+                                                placeholder="Enter Name"
+                                                className={cn(
+                                                    "h-12 bg-gray-50/50 border-[#E2F1E8] rounded-lg focus-visible:ring-[#219653]",
+                                                    errors.name && "border-red-500"
+                                                )}
+                                            />
+                                        )}
+                                    />
+                                    {errors.name && <p className="text-xs text-red-500 ml-1">{errors.name.message}</p>}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-black ml-1">Gender</label>
+                                        <Controller
+                                            control={control}
+                                            name="gender"
+                                            render={({ field }) => (
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <SelectTrigger className="h-18 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus:ring-[#219653]">
+                                                        <SelectValue placeholder="Select" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="male">Male</SelectItem>
+                                                        <SelectItem value="female">Female</SelectItem>
+                                                        <SelectItem value="other">Other</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-black ml-1">Age</label>
+                                        <Controller
+                                            control={control}
+                                            name="age"
+                                            render={({ field }) => (
+                                                <Input
+                                                    {...field}
+                                                    type="number"
+                                                    placeholder="Age"
+                                                    className={cn(
+                                                        "h-12 bg-gray-50/50 border-[#E2F1E8] rounded-lg focus-visible:ring-[#219653]",
+                                                        errors.age && "border-red-500"
+                                                    )}
+                                                />
+                                            )}
+                                        />
+                                        {errors.age && <p className="text-xs text-red-500 ml-1">{errors.age.message}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-black ml-1">Contact Number (Optional)</label>
+                                    <Controller
+                                        control={control}
+                                        name="contactNumber"
+                                        render={({ field }) => (
+                                            <Input
+                                                {...field}
+                                                placeholder="Phone number"
+                                                className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-lg focus-visible:ring-[#219653]"
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2 ml-1">
+                                    <Controller
+                                        control={control}
+                                        name="isPrimary"
+                                        render={({ field }) => {
+                                            const totalParticipants = booking?.Customers?.length || 0;
+                                            const isDisabled = (totalParticipants <= 1) && field.value;
+
+                                            return (
+                                                <input
+                                                    type="checkbox"
+                                                    id="isPrimary"
+                                                    checked={field.value}
+                                                    onChange={field.onChange}
+                                                    disabled={isDisabled}
+                                                    className={cn(
+                                                        "w-4 h-4 rounded border-gray-300 text-[#219653] focus:ring-[#219653]",
+                                                        isDisabled && "opacity-50 cursor-not-allowed"
+                                                    )}
+                                                />
+                                            );
+                                        }}
+                                    />
+                                    <label htmlFor="isPrimary" className="text-sm font-medium text-gray-700">Primary Contact</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-white border-t border-gray-50 flex gap-4">
+                            <Button
+                                type="submit"
+                                className="flex-1 bg-[#219653] hover:bg-[#1A7B44] py-7 rounded-full text-white font-bold text-lg shadow-lg shadow-green-100"
+                                disabled={updateParticipantsMutation.isPending}
+                            >
+                                {updateParticipantsMutation.isPending ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    "Save Changes"
+                                )}
+                            </Button>
+                        </div>
+                    </form>
                 </DrawerContent>
             </Drawer>
         </div>

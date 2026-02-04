@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, IndianRupee, Calendar as CalendarIcon, Loader2, Tent, Package, Pencil } from "lucide-react";
+import { ArrowLeft, IndianRupee, Calendar as CalendarIcon, Loader2, Tent, Package, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -167,6 +167,32 @@ function EditTripPage() {
         },
     });
 
+    const deleteTripMutation = useMutation({
+        mutationFn: async () => {
+            const response = await apiWithOffline.delete(`/trips/${tripId}`);
+            return response.data;
+        },
+        onSuccess: () => {
+            toast.success("Trip deleted successfully!");
+            queryClient.invalidateQueries({ queryKey: ["trips"] });
+            router.push("/select-trip");
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to delete trip.");
+        },
+    });
+
+    const handleDelete = () => {
+        const bookingCount = tripResponse?.data?.bookingCount || 0;
+        const message = bookingCount > 0
+            ? `This trip has ${bookingCount} active booking(s). Deleting it will hide it from new bookings, but existing bookings will remain. Are you sure?`
+            : "Are you sure you want to delete this trip? This will hide it from new bookings.";
+
+        if (window.confirm(message)) {
+            deleteTripMutation.mutate();
+        }
+    };
+
     const onSubmit = (values: EditTripValues) => {
         editTripMutation.mutate(values);
     };
@@ -185,9 +211,22 @@ function EditTripPage() {
                 >
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
-                <h1 className="text-lg font-sans font-bold text-black flex-1 text-center mr-10">
+                <h1 className="text-lg font-sans font-bold text-black flex-1 text-center">
                     Edit Trip
                 </h1>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDelete}
+                    disabled={deleteTripMutation.isPending}
+                    className="text-red-500 hover:bg-red-50"
+                >
+                    {deleteTripMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                        <Trash2 className="w-5 h-5" />
+                    )}
+                </Button>
             </div>
 
             {/* Main Content */}
