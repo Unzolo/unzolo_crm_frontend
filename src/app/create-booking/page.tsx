@@ -289,7 +289,7 @@ function CreateBookingPage() {
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ["bookings", tripId] });
             toast.success("Booking created successfully!");
-            router.push(`/booking-details/${data.data.id}?whatsapp_trigger=true`);
+            router.replace(`/booking-details/${data.data.id}?whatsapp_trigger=true`);
         },
         onError: (error: any) => {
             if (error.isOffline) {

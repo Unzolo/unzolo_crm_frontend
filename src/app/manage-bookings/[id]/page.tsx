@@ -382,7 +382,7 @@ function ManageBookingPage() {
                             {bookingsLoading ? (
                                 <Skeleton className="h-3 w-16" />
                             ) : (
-                                <span className="text-xs text-gray-400 font-bold">{bookings.length} Bookings</span>
+                                <span className="text-xs text-gray-400 font-bold">{summary?.activeBookingsCount || 0} Bookings</span>
                             )}
                             {trip?.type === 'package' && trip?.category && (
                                 <>

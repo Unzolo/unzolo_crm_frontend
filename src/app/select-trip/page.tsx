@@ -12,7 +12,9 @@ import {
     Tent,
     Package,
     Tag,
-    IndianRupee
+    IndianRupee,
+    RotateCcw,
+    History
 } from "lucide-react";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -25,6 +27,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,12 +44,20 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerClose,
+} from "@/components/ui/drawer";
 
 function SelectTripPage() {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState("");
     const [sortBy, setSortBy] = useState<"date" | "price" | "title">("date");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    const [isDeletedTripsOpen, setIsDeletedTripsOpen] = useState(false);
     const queryClient = useQueryClient();
 
     const { data: tripsResponse, isLoading: tripsLoading } = useQuery({
@@ -65,9 +76,34 @@ function SelectTripPage() {
         onSuccess: () => {
             toast.success("Trip deleted successfully");
             queryClient.invalidateQueries({ queryKey: ["trips"] });
+            queryClient.invalidateQueries({ queryKey: ["deleted-trips"] });
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Failed to delete trip");
+        }
+    });
+
+    const { data: deletedTripsResponse, isLoading: deletedTripsLoading } = useQuery({
+        queryKey: ["deleted-trips"],
+        queryFn: async () => {
+            const response = await apiWithOffline.get("/trips/deleted");
+            return response.data;
+        },
+        enabled: isDeletedTripsOpen
+    });
+
+    const recoverTripMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const response = await apiWithOffline.patch(`/trips/${id}/recover`);
+            return response.data;
+        },
+        onSuccess: () => {
+            toast.success("Trip recovered successfully");
+            queryClient.invalidateQueries({ queryKey: ["trips"] });
+            queryClient.invalidateQueries({ queryKey: ["deleted-trips"] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to recover trip");
         }
     });
 
@@ -146,9 +182,11 @@ function SelectTripPage() {
 
             {/* Desktop Header */}
             <div className="hidden lg:block p-6 bg-white border-b border-gray-200">
-                <div className="max-w-5xl mx-auto">
-                    <h1 className="text-3xl font-bold text-black">Manage Bookings</h1>
-                    <p className="text-sm text-gray-500 mt-1">Select a trip to view and manage its bookings</p>
+                <div className="max-w-5xl mx-auto flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-black">Manage Bookings</h1>
+                        <p className="text-sm text-gray-500 mt-1">Select a trip to view and manage its bookings</p>
+                    </div>
                 </div>
             </div>
 
@@ -277,7 +315,16 @@ function SelectTripPage() {
                                     <div className="space-y-6">
                                         {camps.upcoming.length > 0 && (
                                             <div className="space-y-3">
-                                                <h3 className="text-sm font-bold text-gray-400 ml-1 uppercase tracking-wider">Upcoming Camps</h3>
+                                                <div className="flex items-center justify-between ml-1 pr-1">
+                                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Upcoming Camps</h3>
+                                                    <button
+                                                        onClick={() => setIsDeletedTripsOpen(true)}
+                                                        className="flex items-center gap-1.5 text-gray-400 hover:text-[#219653] transition-colors group px-2 py-1 rounded-lg hover:bg-[#E2F1E8]/50"
+                                                    >
+                                                        <History className="w-4 h-4 group-hover:-rotate-45 transition-transform" />
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider">Trash</span>
+                                                    </button>
+                                                </div>
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                                                     {camps.upcoming.map((trip: any) => (
                                                         <TripCard
@@ -341,7 +388,16 @@ function SelectTripPage() {
                                     <div className="space-y-6">
                                         {packages.upcoming.length > 0 && (
                                             <div className="space-y-3">
-                                                <h3 className="text-sm font-bold text-gray-400 ml-1 uppercase tracking-wider">Upcoming Packages</h3>
+                                                <div className="flex items-center justify-between ml-1 pr-1">
+                                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Upcoming Packages</h3>
+                                                    <button
+                                                        onClick={() => setIsDeletedTripsOpen(true)}
+                                                        className="flex items-center gap-1.5 text-gray-400 hover:text-[#219653] transition-colors group px-2 py-1 rounded-lg hover:bg-[#E2F1E8]/50"
+                                                    >
+                                                        <History className="w-4 h-4 group-hover:-rotate-45 transition-transform" />
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider">Trash</span>
+                                                    </button>
+                                                </div>
                                                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                                                     {packages.upcoming.map((trip: any) => (
                                                         <TripCard
@@ -384,6 +440,80 @@ function SelectTripPage() {
                     </Tabs>
                 </div>
             </div>
+
+            {/* Recovery Drawer */}
+            <Drawer open={isDeletedTripsOpen} onOpenChange={setIsDeletedTripsOpen}>
+                <DrawerContent className="bg-white rounded-t-[32px] outline-none max-h-[85vh]">
+                    <div className="max-w-3xl mx-auto w-full flex flex-col h-full overflow-hidden">
+                        <DrawerHeader className="text-center shrink-0 pt-6">
+                            <DrawerTitle className="text-xl font-bold flex items-center justify-center gap-2">
+                                <History className="w-6 h-6 text-[#219653]" />
+                                Recover Deleted Trips
+                            </DrawerTitle>
+                        </DrawerHeader>
+
+                        <div className="flex-1 overflow-y-auto px-6 pb-12">
+                            {deletedTripsLoading ? (
+                                <div className="space-y-3 mt-4">
+                                    <Skeleton className="h-20 w-full rounded-2xl" />
+                                    <Skeleton className="h-20 w-full rounded-2xl" />
+                                </div>
+                            ) : deletedTripsResponse?.data?.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Trash2 className="w-8 h-8 text-gray-300" />
+                                    </div>
+                                    <p className="text-gray-500 font-medium">No deleted trips found</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 gap-3 mt-4">
+                                    {deletedTripsResponse?.data?.map((trip: any) => (
+                                        <Card key={trip.id} className="p-4 border border-gray-100 bg-white hover:bg-[#F9FAFB] transition-all rounded-[16px] flex flex-row items-center justify-between group shadow-sm hover:shadow-md">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 group-hover:bg-white transition-colors">
+                                                    {trip.type === "package" ? (
+                                                        <Package className="w-6 h-6 text-gray-400 group-hover:text-[#219653] transition-colors" />
+                                                    ) : (
+                                                        <Tent className="w-6 h-6 text-gray-400 group-hover:text-[#219653] transition-colors" />
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col min-w-0">
+                                                    <h4 className="text-[15px] font-bold text-black truncate max-w-[170px] leading-tight mb-1">
+                                                        {trip.title}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="outline" className="text-[9px] bg-gray-100/50 text-gray-500 border-none px-1.5 h-4 flex items-center uppercase font-bold tracking-tighter">
+                                                            {trip.type === "package" ? "Package" : "Camp"}
+                                                        </Badge>
+                                                        <div className="flex items-center gap-1">
+                                                            <MapPin className="w-2.5 h-2.5 text-gray-300" />
+                                                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest truncate max-w-[80px]">{trip.destination}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                onClick={() => recoverTripMutation.mutate(trip.id)}
+                                                disabled={recoverTripMutation.isPending}
+                                                className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-[10px]  text-xs h-10 px-3 shadow-lg shadow-[#219653]/20 hover:shadow-[#219653]/40 transition-all active:scale-95"
+                                            >
+                                                {recoverTripMutation.isPending ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                        <span>Recover</span>
+                                                    </div>
+                                                )}
+                                            </Button>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </DrawerContent>
+            </Drawer>
         </div>
     );
 }
