@@ -13,7 +13,11 @@ import {
     Landmark,
     Check,
     Loader2,
-    Pencil
+    Pencil,
+    MessageCircle,
+    MoreVertical,
+    Share2,
+    Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,7 +43,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -78,6 +82,9 @@ function BookingDetailsPage() {
     const [isDesktop, setIsDesktop] = useState(false);
     const [isEditParticipantOpen, setIsEditParticipantOpen] = useState(false);
     const [editingParticipant, setEditingParticipant] = useState<any>(null);
+    const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
+    const [lastPaymentAmount, setLastPaymentAmount] = useState<string | null>(null);
+    const [suggestedAction, setSuggestedAction] = useState<'confirmation' | 'cancellation' | 'payment' | 'hi' | null>(null);
 
     const { control, handleSubmit, reset, setValue, formState: { errors } } = useForm<ParticipantValues>({
         resolver: zodResolver(participantSchema) as any,
@@ -90,6 +97,20 @@ function BookingDetailsPage() {
             place: "",
         }
     });
+
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (searchParams.get('whatsapp_trigger') === 'true') {
+            const type = searchParams.get('type') as any;
+            if (type === 'cancellation') {
+                setSuggestedAction('cancellation');
+            } else {
+                setSuggestedAction('confirmation');
+            }
+            setIsWhatsAppOpen(true);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         const checkDesktop = () => {
@@ -185,15 +206,22 @@ function BookingDetailsPage() {
             });
             return response.data;
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             toast.success("Payment added successfully");
             setIsUpdatePaymentOpen(false);
+            setLastPaymentAmount(data.data.amount.toString()); // Store the amount from response
+            setSuggestedAction('payment');
             setCustomAmount("");
             setConcessionAmount("");
             setSelectedFile(null);
             setImagePreview(null);
             queryClient.invalidateQueries({ queryKey: ["booking", id] });
             queryClient.invalidateQueries({ queryKey: ["bookings"] });
+
+            // Show WhatsApp trigger
+            setTimeout(() => {
+                setIsWhatsAppOpen(true);
+            }, 500);
         },
         onError: (error: any) => {
             if (error.isOffline) {
@@ -227,6 +255,48 @@ function BookingDetailsPage() {
 
     const onParticipantSubmit: SubmitHandler<ParticipantValues> = (values) => {
         updateParticipantsMutation.mutate([values]);
+    };
+
+    const sendWhatsAppMessage = (type: 'confirmation' | 'cancellation' | 'payment' | 'hi', customAmount?: string) => {
+        if (!booking) return;
+
+        const primaryCustomer = booking.Customers?.find((c: any) => c.isPrimary) || booking.Customers?.[0];
+        if (!primaryCustomer?.contactNumber) {
+            toast.error("Primary contact number not found");
+            return;
+        }
+
+        const tripTitle = booking.Trip?.title;
+        const partnerName = booking.Partner?.name || "Your Travel Partner";
+        const date = booking.Trip?.type === 'package'
+            ? (booking.preferredDate ? format(new Date(booking.preferredDate), "do MMM, yyyy") : "Flexible Dates")
+            : (booking.Trip?.startDate ? format(new Date(booking.Trip.startDate), "do MMM, yyyy") : "TBD");
+
+        let message = "";
+
+        if (type === 'confirmation') {
+            message = `*Booking Confirmed!* 🎒✨\n\nHello *${primaryCustomer.name}*,\n\nYour trip to *${tripTitle}* is officially confirmed! We're excited to have you on board. \n\n*Booking Details:*\n📍 Destination: ${booking.Trip?.destination}\n📅 Date: ${date}\n💰 Total Amount: INR ${(parseFloat(booking.totalCost) + parseFloat(booking.concessionAmount)).toLocaleString()}\n✅ Paid: INR ${parseFloat(booking.paidAmount).toLocaleString()}\n\nSafe travels! 🗺️\n\nBest regards,\n*${partnerName}*`;
+        } else if (type === 'cancellation') {
+            const cancelledParticipants = booking.Customers?.filter((c: any) => c.status === 'cancelled') || [];
+            const cancelledCount = cancelledParticipants.length;
+
+            let memberDetails = "";
+            if (cancelledCount > 0) {
+                memberDetails = `\n\n*Cancelled Members:*\n` + cancelledParticipants.map((p: any) => `👤 ${p.name} (${p.age} yrs)`).join('\n');
+            }
+
+            message = `*Booking Cancelled* 😔\n\nHello *${primaryCustomer.name}*,\n\nThis is to notify you that the booking for *${tripTitle}* has been cancelled for ${cancelledCount} member(s).${memberDetails}\n\nIf you have any questions, feel free to reach out.\n\nRegards,\n*${partnerName}*`;
+        } else if (type === 'payment') {
+            const amount = customAmount || customAmount;
+            message = `*Payment Received* ✅\n\nHello *${primaryCustomer.name}*,\n\nWe have successfully received your payment of *INR ${parseFloat(amount || "0").toLocaleString()}* for the *${tripTitle}* trip. \n\n*Payment Details:*\n✅ Amount Paid: INR ${parseFloat(amount || "0").toLocaleString()}\n💰 Total Amount: INR ${(parseFloat(booking.totalCost) + parseFloat(booking.concessionAmount)).toLocaleString()}\n💰 Total Received: INR ${parseFloat(booking.paidAmount).toLocaleString()}\n📉 Remaining Balance: INR ${parseFloat(booking.remainingAmount).toLocaleString()}\n\nThank you! 🙏\n\nRegards,\n*${partnerName}*`;
+        } else if (type === 'hi') {
+            message = `Hi *${primaryCustomer.name}*!`;
+        }
+
+        const cleanNumber = primaryCustomer.contactNumber.replace(/\D/g, '');
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=91${cleanNumber}&text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+        setIsWhatsAppOpen(false);
     };
 
     const handleEditParticipant = (participant: any) => {
@@ -279,7 +349,14 @@ function BookingDetailsPage() {
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
                 <h1 className="text-lg font-bold text-black flex-1 text-center ">Booking Details</h1>
-                <div className="w-10" /> {/* Spacer */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsWhatsAppOpen(true)}
+                    className="text-[#219653] hover:bg-[#E2F1E8]"
+                >
+                    <MessageCircle className="w-6 h-6" />
+                </Button>
             </div>
 
             {/* Main Content */}
@@ -936,6 +1013,134 @@ function BookingDetailsPage() {
                             </Button>
                         </div>
                     </form>
+                </DrawerContent>
+            </Drawer>
+
+            {/* WhatsApp Actions Drawer */}
+            <Drawer open={isWhatsAppOpen} onOpenChange={setIsWhatsAppOpen}>
+                <DrawerContent className="bg-white rounded-t-[32px] outline-none max-h-[80vh]">
+                    <DrawerHeader className="text-center p-0 mb-6">
+                        <DrawerTitle className="text-xl font-bold flex items-center justify-center gap-2">
+                            <MessageCircle className="w-6 h-6 text-[#219653]" />
+                            WhatsApp Actions
+                        </DrawerTitle>
+                    </DrawerHeader>
+
+                    <div className="px-6 space-y-3 pb-12 overflow-y-auto">
+                        {suggestedAction ? (
+                            <div className="space-y-4">
+                                <div className="bg-[#219653]/5 border border-[#219653]/10 p-4 rounded-2xl">
+                                    <p className="text-[10px] text-[#219653] font-bold uppercase tracking-wider mb-2">Suggested Action</p>
+                                    <Button
+                                        onClick={() => sendWhatsAppMessage(suggestedAction, suggestedAction === 'payment' ? (lastPaymentAmount || "0") : undefined)}
+                                        className="w-full h-16 bg-[#219653] hover:bg-[#1A7B44] text-white rounded-2xl flex items-center justify-between px-5 font-bold text-base"
+                                    >
+                                        <span>Send {suggestedAction === 'confirmation' ? 'Confirmation 🎒' : suggestedAction === 'payment' ? 'Payment Update ✅' : 'Cancellation 😔'}</span>
+                                        <Send className="w-5 h-5" />
+                                    </Button>
+                                    <p className="text-[10px] text-gray-400 mt-3 italic">This message is pre-formatted for your recent activity.</p>
+                                </div>
+
+                                <div className="pt-2">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 mb-2">Other Options</p>
+                                    <Button
+                                        onClick={() => sendWhatsAppMessage('hi')}
+                                        className="w-full h-14 bg-orange-50 hover:bg-orange-100 text-orange-600 border-none rounded-2xl flex items-center justify-between px-4 font-bold transition-all group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                                <MessageCircle className="w-4 h-4" />
+                                            </div>
+                                            <span className="text-sm">Just Say Hi 👋</span>
+                                        </div>
+                                        <Send className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => setSuggestedAction(null)}
+                                        className="w-full mt-2 text-xs text-gray-400 hover:text-[#219653]"
+                                    >
+                                        Show all templates
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 mb-1">Templates</p>
+
+                                <div className="grid grid-cols-1 gap-2">
+                                    <Button
+                                        onClick={() => sendWhatsAppMessage('confirmation')}
+                                        className="w-full h-14 bg-gray-50 hover:bg-gray-100 text-gray-700 border-none rounded-2xl flex items-center justify-between px-4 font-bold transition-all group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                                <Check className="w-4 h-4 text-[#219653]" />
+                                            </div>
+                                            <span className="text-sm">Booking Confirmation 🎒</span>
+                                        </div>
+                                        <Send className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
+                                    </Button>
+
+                                    <Button
+                                        onClick={() => sendWhatsAppMessage('payment', lastPaymentAmount || "0")}
+                                        className="w-full h-14 bg-gray-50 hover:bg-gray-100 text-gray-700 border-none rounded-2xl flex items-center justify-between px-4 font-bold transition-all group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                                <IndianRupee className="w-4 h-4 text-blue-600" />
+                                            </div>
+                                            <span className="text-sm">Payment Update ✅</span>
+                                        </div>
+                                        <Send className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
+                                    </Button>
+
+                                    <Button
+                                        onClick={() => sendWhatsAppMessage('cancellation')}
+                                        className="w-full h-14 bg-gray-50 hover:bg-gray-100 text-gray-700 border-none rounded-2xl flex items-center justify-between px-4 font-bold transition-all group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                                <X className="w-4 h-4 text-red-600" />
+                                            </div>
+                                            <span className="text-sm">Cancellation Notice 😔</span>
+                                        </div>
+                                        <Send className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
+                                    </Button>
+
+                                    <Button
+                                        onClick={() => sendWhatsAppMessage('hi')}
+                                        className="w-full h-14 bg-orange-50 hover:bg-orange-100 text-orange-600 border-none rounded-2xl flex items-center justify-between px-4 font-bold transition-all group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                                <MessageCircle className="w-4 h-4" />
+                                            </div>
+                                            <span className="text-sm">Say Hi 👋</span>
+                                        </div>
+                                        <Send className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all" />
+                                    </Button>
+                                </div>
+                            </>
+                        )}
+
+                        <div className="pt-4 border-t border-gray-50">
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    const primaryCustomer = booking?.Customers?.find((c: any) => c.isPrimary) || booking?.Customers?.[0];
+                                    if (primaryCustomer?.contactNumber) {
+                                        window.open(`https://wa.me/91${primaryCustomer.contactNumber.replace(/\D/g, '')}`, '_blank');
+                                    }
+                                    setIsWhatsAppOpen(false);
+                                }}
+                                className="w-full h-14 rounded-xl text-gray-500 font-bold"
+                            >
+                                Just open WhatsApp chat
+                            </Button>
+                        </div>
+                    </div>
                 </DrawerContent>
             </Drawer>
         </div>

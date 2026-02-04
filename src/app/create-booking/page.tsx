@@ -286,10 +286,10 @@ function CreateBookingPage() {
             });
             return response.data;
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ["bookings", tripId] });
             toast.success("Booking created successfully!");
-            router.push(`/manage-bookings/${tripId}`);
+            router.push(`/booking-details/${data.data.id}?whatsapp_trigger=true`);
         },
         onError: (error: any) => {
             if (error.isOffline) {

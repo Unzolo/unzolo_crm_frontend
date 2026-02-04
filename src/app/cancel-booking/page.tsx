@@ -139,9 +139,8 @@ function CancelBookingPage() {
                 toast.success("Cancellation processed successfully");
             }
             queryClient.invalidateQueries({ queryKey: ["bookings"] });
-            const tripId = bookingData?.trip?._id || bookingData?.trip?.id;
-            if (tripId) {
-                router.push(`/manage-bookings/${tripId}`);
+            if (bookingId) {
+                router.push(`/booking-details/${bookingId}?whatsapp_trigger=true&type=cancellation`);
             } else {
                 router.push("/");
             }
