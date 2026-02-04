@@ -58,6 +58,7 @@ const participantSchema = z.object({
     age: z.coerce.number().min(1, "Age is required"),
     contactNumber: z.string().optional(),
     isPrimary: z.boolean().default(false),
+    place: z.string().optional(),
 });
 
 type ParticipantValues = z.infer<typeof participantSchema>;
@@ -86,6 +87,7 @@ function BookingDetailsPage() {
             age: 0,
             contactNumber: "",
             isPrimary: false,
+            place: "",
         }
     });
 
@@ -236,6 +238,7 @@ function BookingDetailsPage() {
             age: participant.age,
             contactNumber: participant.contactNumber || "",
             isPrimary: participant.isPrimary || false,
+            place: participant.place || "",
         });
         setIsEditParticipantOpen(true);
     };
@@ -248,6 +251,7 @@ function BookingDetailsPage() {
             age: 0,
             contactNumber: "",
             isPrimary: false,
+            place: "",
         });
         setIsEditParticipantOpen(true);
     };
@@ -338,6 +342,7 @@ function BookingDetailsPage() {
                                             <p className={cn("text-sm font-bold", p.status === 'cancelled' ? "text-red-900" : "text-black")}>{p.name}</p>
                                             <p className="text-[12px] text-gray-400 font-medium">
                                                 {p.age} yrs • {p.gender === 'male' ? "♂" : p.gender === 'female' ? "♀" : ""} {p.gender}
+                                                {p.place && ` • ${p.place}`}
                                             </p>
                                         </div>
                                     </div>
@@ -865,6 +870,21 @@ function BookingDetailsPage() {
                                             <Input
                                                 {...field}
                                                 placeholder="Phone number"
+                                                className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-lg focus-visible:ring-[#219653]"
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-black ml-1">Place (Optional)</label>
+                                    <Controller
+                                        control={control}
+                                        name="place"
+                                        render={({ field }) => (
+                                            <Input
+                                                {...field}
+                                                placeholder="Enter City/Place"
                                                 className="h-12 bg-gray-50/50 border-[#E2F1E8] rounded-lg focus-visible:ring-[#219653]"
                                             />
                                         )}

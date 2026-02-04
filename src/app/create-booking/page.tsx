@@ -55,6 +55,7 @@ const memberSchema = z.object({
     age: z.coerce.number().min(1, "Age is required"),
     contactNumber: z.string().optional(),
     isPrimary: z.boolean(),
+    place: z.string().optional(),
 }).refine((data) => {
     if (data.isPrimary && (!data.contactNumber || data.contactNumber.length < 10)) {
         return false;
@@ -372,7 +373,7 @@ function CreateBookingPage() {
                                         variant="ghost"
                                         size="icon"
                                         className="w-8 h-8 rounded-full bg-[#E2F1E8] text-[#219653] hover:bg-[#d5e9dc]"
-                                        onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false })}
+                                        onClick={() => append({ name: "", gender: "male", age: 0, contactNumber: "", isPrimary: false, place: "" })}
                                     >
                                         <Plus className="w-4 h-4" />
                                     </Button>
@@ -598,11 +599,20 @@ function CreateBookingPage() {
                                             <Input
                                                 {...register(`members.${index}.age`)}
                                                 type="number"
-                                                placeholder="eg: 20"
+                                                placeholder="Age"
                                                 className={cn(
                                                     "h-12 mt-1 placeholder:text-sm bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]",
                                                     errors.members?.[index]?.age && "border-red-500"
                                                 )}
+                                            />
+                                        </div>
+
+                                        <div className="col-span-12 space-y-1.5">
+                                            <label className="text-xs font-bold text-black ml-1">Place (Optional)</label>
+                                            <Input
+                                                {...register(`members.${index}.place`)}
+                                                placeholder="Enter City/Place"
+                                                className="h-12 placeholder:text-sm mt-1 bg-gray-50/50 border-[#E2F1E8] rounded-xl focus-visible:ring-[#219653]"
                                             />
                                         </div>
                                     </div>
