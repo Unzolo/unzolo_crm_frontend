@@ -2,6 +2,7 @@
 
 import {
     ArrowLeft,
+    ArrowRight,
     Search,
     SlidersHorizontal,
     MapPin,
@@ -478,17 +479,21 @@ function TripCard({ trip, onClick, onEdit, onDelete, router }: { trip: any, onCl
                         <span className="text-sm font-black text-[#219653]">₹{parseFloat(trip.price).toLocaleString()}</span>
                     </div>
                 </div>
-                {trip.totalExpenses > 0 && (
-                    <div className="bg-[#EE5A6F]/5 border border-[#EE5A6F]/10 px-2.5 py-1.5 rounded-xl flex items-center gap-2 group-hover:bg-[#EE5A6F]/10 transition-colors">
-                        <div className="w-5 h-5 rounded-full bg-[#EE5A6F]/10 flex items-center justify-center shrink-0">
-                            <IndianRupee className="w-3 h-3 text-[#EE5A6F]" />
-                        </div>
-                        <div className="flex flex-col items-start leading-none">
-                            <span className="text-[7px] text-gray-400 font-black uppercase tracking-tighter mb-0.5">Expenses</span>
-                            <span className="text-[11px] font-black text-[#EE5A6F]">₹{parseFloat(trip.totalExpenses).toLocaleString()}</span>
-                        </div>
+                <div
+                    role="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onClick();
+                    }}
+                    className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-[#E2F1E8] hover:bg-[#219653] rounded-full transition-all active:scale-95 group/btn cursor-pointer"
+                >
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#219653] group-hover/btn:text-white transition-colors">
+                        Manage Expenses
+                    </span>
+                    <div className="w-5 h-5 rounded-full bg-white/50 group-hover/btn:bg-white/20 flex items-center justify-center transition-colors">
+                        <ArrowRight className="w-2.5 h-2.5 text-[#219653] group-hover/btn:text-white transition-colors" />
                     </div>
-                )}
+                </div>
             </div>
         </Card>
     );

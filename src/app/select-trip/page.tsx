@@ -51,6 +51,13 @@ import {
     DrawerTitle,
     DrawerClose,
 } from "@/components/ui/drawer";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 function SelectTripPage() {
     const router = useRouter();
@@ -59,6 +66,7 @@ function SelectTripPage() {
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
     const [isDeletedTripsOpen, setIsDeletedTripsOpen] = useState(false);
     const queryClient = useQueryClient();
+    const isDesktop = useMediaQuery("(min-width: 1024px)");
 
     const { data: tripsResponse, isLoading: tripsLoading } = useQuery({
         queryKey: ["trips"],
@@ -163,6 +171,69 @@ function SelectTripPage() {
             return "Date TBD";
         }
     };
+
+    const DeletedTripsContent = () => (
+        <div className="flex-1 overflow-y-auto px-6 pb-12">
+            {deletedTripsLoading ? (
+                <div className="space-y-3 mt-4">
+                    <Skeleton className="h-20 w-full rounded-2xl" />
+                    <Skeleton className="h-20 w-full rounded-2xl" />
+                </div>
+            ) : deletedTripsResponse?.data?.length === 0 ? (
+                <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Trash2 className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-gray-500 font-medium">No deleted trips found</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-3 mt-4">
+                    {deletedTripsResponse?.data?.map((trip: any) => (
+                        <Card key={trip.id} className="p-4 border border-gray-100 bg-white hover:bg-[#F9FAFB] transition-all rounded-[16px] flex flex-row items-center justify-between group shadow-sm hover:shadow-md">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className="w-10 h-10 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 group-hover:bg-white transition-colors">
+                                    {trip.type === "package" ? (
+                                        <Package className="w-5 h-5 text-gray-400 group-hover:text-[#219653] transition-colors" />
+                                    ) : (
+                                        <Tent className="w-5 h-5 text-gray-400 group-hover:text-[#219653] transition-colors" />
+                                    )}
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <h4 className="text-[14px] font-bold text-black truncate max-w-[110px] leading-tight mb-0.5">
+                                        {trip.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-[8px] bg-gray-100/50 text-gray-500 border-none px-1.5 h-3.5 flex items-center uppercase font-bold tracking-tighter shrink-0">
+                                            {trip.type === "package" ? "Pkg" : "Camp"}
+                                        </Badge>
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <MapPin className="w-2.5 h-2.5 text-gray-300 shrink-0" />
+                                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest truncate max-w-[60px]">{trip.destination}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={() => recoverTripMutation.mutate(trip.id)}
+                                disabled={recoverTripMutation.isPending}
+                                className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-[10px] text-xs h-10 px-3 shadow-lg shadow-[#219653]/20 hover:shadow-[#219653]/40 transition-all active:scale-95"
+                            >
+                                {recoverTripMutation.isPending ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <RotateCcw className="w-3.5 h-3.5" />
+                                        <span>Recover</span>
+                                    </div>
+                                )}
+                            </Button>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
 
     return (
         <div className="min-h-screen bg-[#E2F1E8] flex flex-col">
@@ -441,79 +512,34 @@ function SelectTripPage() {
                 </div>
             </div>
 
-            {/* Recovery Drawer */}
-            <Drawer open={isDeletedTripsOpen} onOpenChange={setIsDeletedTripsOpen}>
-                <DrawerContent className="bg-white rounded-t-[32px] outline-none max-h-[85vh]">
-                    <div className="max-w-3xl mx-auto w-full flex flex-col h-full overflow-hidden">
-                        <DrawerHeader className="text-center shrink-0 pt-6">
+
+            {/* Recovery Drawer/Sheet */}
+            {/* Recovery Drawer/Sheet */}
+            {isDesktop ? (
+                <Sheet open={isDeletedTripsOpen} onOpenChange={setIsDeletedTripsOpen}>
+                    <SheetContent className="bg-white p-0 flex flex-col h-full">
+                        <SheetHeader className="text-center shrink-0 pt-6 pb-4">
+                            <SheetTitle className="text-xl font-bold flex items-center justify-center gap-2">
+                                <History className="w-6 h-6 text-[#219653]" />
+                                Recover Deleted Trips
+                            </SheetTitle>
+                        </SheetHeader>
+                        <DeletedTripsContent />
+                    </SheetContent>
+                </Sheet>
+            ) : (
+                <Drawer open={isDeletedTripsOpen} onOpenChange={setIsDeletedTripsOpen}>
+                    <DrawerContent className="bg-white rounded-t-[32px] outline-none max-h-[85vh] flex flex-col">
+                        <DrawerHeader className="text-center shrink-0 pt-6 pb-4">
                             <DrawerTitle className="text-xl font-bold flex items-center justify-center gap-2">
                                 <History className="w-6 h-6 text-[#219653]" />
                                 Recover Deleted Trips
                             </DrawerTitle>
                         </DrawerHeader>
-
-                        <div className="flex-1 overflow-y-auto px-6 pb-12">
-                            {deletedTripsLoading ? (
-                                <div className="space-y-3 mt-4">
-                                    <Skeleton className="h-20 w-full rounded-2xl" />
-                                    <Skeleton className="h-20 w-full rounded-2xl" />
-                                </div>
-                            ) : deletedTripsResponse?.data?.length === 0 ? (
-                                <div className="text-center py-12">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Trash2 className="w-8 h-8 text-gray-300" />
-                                    </div>
-                                    <p className="text-gray-500 font-medium">No deleted trips found</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 gap-3 mt-4">
-                                    {deletedTripsResponse?.data?.map((trip: any) => (
-                                        <Card key={trip.id} className="p-4 border border-gray-100 bg-white hover:bg-[#F9FAFB] transition-all rounded-[16px] flex flex-row items-center justify-between group shadow-sm hover:shadow-md">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 group-hover:bg-white transition-colors">
-                                                    {trip.type === "package" ? (
-                                                        <Package className="w-6 h-6 text-gray-400 group-hover:text-[#219653] transition-colors" />
-                                                    ) : (
-                                                        <Tent className="w-6 h-6 text-gray-400 group-hover:text-[#219653] transition-colors" />
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col min-w-0">
-                                                    <h4 className="text-[15px] font-bold text-black truncate max-w-[170px] leading-tight mb-1">
-                                                        {trip.title}
-                                                    </h4>
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge variant="outline" className="text-[9px] bg-gray-100/50 text-gray-500 border-none px-1.5 h-4 flex items-center uppercase font-bold tracking-tighter">
-                                                            {trip.type === "package" ? "Package" : "Camp"}
-                                                        </Badge>
-                                                        <div className="flex items-center gap-1">
-                                                            <MapPin className="w-2.5 h-2.5 text-gray-300" />
-                                                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-widest truncate max-w-[80px]">{trip.destination}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <Button
-                                                onClick={() => recoverTripMutation.mutate(trip.id)}
-                                                disabled={recoverTripMutation.isPending}
-                                                className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-[10px]  text-xs h-10 px-3 shadow-lg shadow-[#219653]/20 hover:shadow-[#219653]/40 transition-all active:scale-95"
-                                            >
-                                                {recoverTripMutation.isPending ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <div className="flex items-center gap-2">
-                                                        <RotateCcw className="w-3.5 h-3.5" />
-                                                        <span>Recover</span>
-                                                    </div>
-                                                )}
-                                            </Button>
-                                        </Card>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </DrawerContent>
-            </Drawer>
+                        <DeletedTripsContent />
+                    </DrawerContent>
+                </Drawer>
+            )}
         </div>
     );
 }
