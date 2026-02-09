@@ -52,7 +52,7 @@ function AdminDashboardPage() {
     const hasAccess = userEmail === "unzoloapp@gmail.com";
 
     // Global Stats
-    const { data: statsResponse } = useQuery({
+    const { data: statsResponse, isLoading: statsLoading } = useQuery({
         queryKey: ["admin-stats"],
         queryFn: async () => {
             const response = await apiWithOffline.get("/admin/stats");
@@ -225,7 +225,11 @@ function AdminDashboardPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-0.5">Partners</p>
-                                <p className="text-lg font-bold text-black leading-none">{globalStats.totalPartners}</p>
+                                {statsLoading ? (
+                                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                                ) : (
+                                    <p className="text-lg font-bold text-black leading-none">{globalStats.totalPartners}</p>
+                                )}
                             </div>
                         </Card>
                         <Card className="p-4 border-none shadow-sm rounded-2xl ring-1 ring-gray-100/50 flex flex-row gap-3 bg-orange-50/50">
@@ -234,7 +238,11 @@ function AdminDashboardPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-0.5">Trips</p>
-                                <p className="text-lg font-bold text-black leading-none">{globalStats.totalTrips}</p>
+                                {statsLoading ? (
+                                    <Loader2 className="w-4 h-4 text-orange-600 animate-spin" />
+                                ) : (
+                                    <p className="text-lg font-bold text-black leading-none">{globalStats.totalTrips}</p>
+                                )}
                             </div>
                         </Card>
                         <Card className="p-4 border-none shadow-sm rounded-2xl ring-1 ring-gray-100/50 flex flex-row gap-3 bg-green-50/50">
@@ -243,7 +251,11 @@ function AdminDashboardPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-0.5">Bookings</p>
-                                <p className="text-lg font-bold text-black leading-none">{globalStats.totalBookings}</p>
+                                {statsLoading ? (
+                                    <Loader2 className="w-4 h-4 text-green-600 animate-spin" />
+                                ) : (
+                                    <p className="text-lg font-bold text-black leading-none">{globalStats.totalBookings}</p>
+                                )}
                             </div>
                         </Card>
                         <Card className="p-4 border-none shadow-sm rounded-2xl ring-1 ring-gray-100/50 flex flex-row gap-3 bg-purple-50/50">
@@ -252,7 +264,11 @@ function AdminDashboardPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight mb-0.5">Revenue</p>
-                                <p className="text-lg font-bold text-purple-600 leading-none">₹{globalStats.totalEarnings.toLocaleString()}</p>
+                                {statsLoading ? (
+                                    <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />
+                                ) : (
+                                    <p className="text-lg font-bold text-purple-600 leading-none">₹{globalStats.totalEarnings.toLocaleString()}</p>
+                                )}
                             </div>
                         </Card>
                     </div>
@@ -289,7 +305,7 @@ function AdminDashboardPage() {
                                         : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
                                 )}
                             >
-                                
+
                                 <div className={cn(
                                     "w-10 h-5 rounded-full relative transition-all duration-300",
                                     isMaintenanceOn ? "bg-red-500" : "bg-gray-300"
