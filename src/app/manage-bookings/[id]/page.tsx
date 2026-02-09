@@ -16,14 +16,23 @@ import {
     ChevronUp,
     Clock,
     Download,
-    Phone
+    Phone,
+    History,
+    RotateCcw
 } from "lucide-react";
 import {
     Drawer,
     DrawerContent,
     DrawerHeader,
     DrawerTitle,
+    DrawerClose,
 } from "@/components/ui/drawer";
+import {
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import {
     Popover,
     PopoverContent,
@@ -37,7 +46,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRouter, useParams } from "next/navigation";
 import { useState } from "react";
 import { withAuth } from "@/components/auth/with-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -45,6 +54,7 @@ import { toast } from "sonner";
 import { PwaInstallBanner } from "@/components/pwa-install-prompt";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useMediaQuery } from "@/lib/hooks/use-media-query";
 
 function ManageBookingPage() {
     const router = useRouter();
@@ -55,11 +65,14 @@ function ManageBookingPage() {
     const [isStatsExpanded, setIsStatsExpanded] = useState(false);
     const [sortBy, setSortBy] = useState<"date" | "amount" | "name">("date");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [isDeletedBookingsOpen, setIsDeletedBookingsOpen] = useState(false);
+    const queryClient = useQueryClient();
+    const isDesktop = useMediaQuery("(min-width: 1024px)");
 
     const { data: bookingsResponse, isLoading: bookingsLoading, isFetching: bookingsFetching } = useQuery({
         queryKey: ["bookings", tripId],
         queryFn: async () => {
-            const response = await apiWithOffline.get(`/bookings?tripId=${tripId}`);
+            const response = await apiWithOffline.get(`/bookings?tripId=${tripId}&includeInactive=true`);
             return response.data;
         },
         enabled: !!tripId,
@@ -115,9 +128,79 @@ function ManageBookingPage() {
         },
     ];
 
-    const filters = ["All", "Advance Paid", "Partially Paid", "Fully Paid", "Partially Cancelled", "Cancelled"];
+    const recoverBookingMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const response = await apiWithOffline.patch(`/bookings/${id}/status`, { isActive: true });
+            return response.data;
+        },
+        onSuccess: () => {
+            toast.success("Booking recovered successfully");
+            queryClient.invalidateQueries({ queryKey: ["bookings", tripId] });
+            queryClient.invalidateQueries({ queryKey: ["booking"] });
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to recover booking");
+        }
+    });
 
-    const getStatusColor = (status: string, paidAmount: number, totalAmount: number, advanceAmount: number) => {
+    const deletedBookings = bookings.filter((b: any) => b.isActive === false);
+
+    const DeletedBookingsContent = () => (
+        <div className="flex-1 overflow-y-auto px-6 pb-12">
+            {deletedBookings.length === 0 ? (
+                <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <History className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-gray-500 font-medium">No deactivated bookings found</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-3 mt-4">
+                    {deletedBookings.map((booking: any) => {
+                        const primaryCustomer = booking.Customers?.find((c: any) => c.isPrimary) || booking.Customers?.[0];
+                        return (
+                            <Card key={booking._id || booking.id} className="p-4 border border-gray-100 bg-white hover:bg-[#F9FAFB] transition-all rounded-[16px] flex flex-row items-center justify-between group shadow-sm hover:shadow-md">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100 group-hover:bg-white transition-colors">
+                                        <Users className="w-5 h-5 text-gray-400 group-hover:text-[#219653] transition-colors" />
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <h4 className="text-[14px] font-bold text-black truncate leading-tight mb-0.5">
+                                            {primaryCustomer?.name || "Unknown"}
+                                        </h4>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] text-gray-400 font-bold">{primaryCustomer?.contactNumber}</span>
+                                            <span className="text-gray-200">•</span>
+                                            <span className="text-[10px] text-gray-400 font-bold uppercase">{format(new Date(booking.bookingDate), "dd MMM")}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={() => recoverBookingMutation.mutate(booking._id || booking.id)}
+                                    disabled={recoverBookingMutation.isPending}
+                                    className="bg-[#219653] hover:bg-[#1A7B44] text-white rounded-[10px] text-xs h-10 px-3 shadow-lg shadow-[#219653]/20 hover:shadow-[#219653]/40 transition-all active:scale-95 flex items-center gap-2"
+                                >
+                                    {recoverBookingMutation.isPending ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <RotateCcw className="w-3.5 h-3.5" />
+                                            <span>Recover</span>
+                                        </>
+                                    )}
+                                </Button>
+                            </Card>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+
+    const filters = ["All", "Advance Paid", "Partially Paid", "Fully Paid", "Partially Cancelled", "Cancelled", "Inactive"];
+
+    const getStatusColor = (status: string, paidAmount: number, totalAmount: number, advanceAmount: number, isActive: boolean = true) => {
+        if (!isActive) return "bg-gray-100 text-gray-400";
         if (status?.toLowerCase() === "cancelled") return "bg-red-50 text-red-500";
         if (status?.toLowerCase() === "partial_cancelled") return "bg-orange-50 text-orange-600";
         if (paidAmount >= totalAmount && totalAmount > 0) return "bg-green-50 text-[#219653]";
@@ -126,7 +209,8 @@ function ManageBookingPage() {
         return "bg-gray-50 text-gray-500";
     };
 
-    const getStatusLabel = (status: string, paidAmount: number, totalAmount: number, advanceAmount: number) => {
+    const getStatusLabel = (status: string, paidAmount: number, totalAmount: number, advanceAmount: number, isActive: boolean = true) => {
+        if (!isActive) return "Inactive";
         if (status?.toLowerCase() === "cancelled") return "Cancelled";
         if (status?.toLowerCase() === "partial_cancelled") return "Partially Cancelled";
         if (paidAmount >= totalAmount && totalAmount > 0) return "Fully Paid";
@@ -150,10 +234,13 @@ function ManageBookingPage() {
             const totalAmount = parseFloat(booking.totalCost || booking.amount || "0");
             const memberCount = booking.Customers?.filter((c: any) => c.status !== 'cancelled').length || booking.memberCount || 0;
             const advanceAmount = parseFloat(trip?.advanceAmount || "0") * (booking.Customers?.length || 0);
-            const statusLabel = getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount);
+            const statusLabel = getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount, booking.isActive);
 
             if (activeFilter !== "All") {
                 matchesFilter = statusLabel === activeFilter;
+            } else {
+                // By default in 'All', only show active bookings unless the user explicitly picks 'Inactive'
+                matchesFilter = booking.isActive !== false;
             }
 
             return matchesSearch && matchesFilter;
@@ -573,6 +660,13 @@ function ManageBookingPage() {
                             <Download className="w-4 h-4" />
                             Download
                         </Button>
+                        <button
+                            onClick={() => setIsDeletedBookingsOpen(true)}
+                            className="flex items-center gap-1.5 text-gray-400 hover:text-[#219653] transition-colors group px-2 py-1 rounded-lg hover:bg-[#E2F1E8]/50 ml-1"
+                        >
+                            <History className="w-4 h-4 group-hover:-rotate-45 transition-transform" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Trash</span>
+                        </button>
                     </div>
 
                     {/* Bookings List */}
@@ -625,8 +719,8 @@ function ManageBookingPage() {
                                                     isCancelled ? "bg-red-50/30 border-red-100" : "bg-white border-[#219653]/10"
                                             )}
                                         >
-                                            <Badge className={`absolute top-0 left-0 border-none shadow-none text-[8px] px-2 py-1 rounded-none rounded-br-xl font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount)}`}>
-                                                {getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount)}
+                                            <Badge className={`absolute top-0 left-0 border-none shadow-none text-[8px] px-2 py-1 rounded-none rounded-br-xl font-bold ${getStatusColor(booking.status, paidAmount, totalAmount, advanceAmount, booking.isActive)}`}>
+                                                {getStatusLabel(booking.status, paidAmount, totalAmount, advanceAmount, booking.isActive)}
                                             </Badge>
                                             <span className="absolute top-1.5 right-3 text-[9px] text-gray-400 font-medium flex items-center gap-1">
                                                 <Clock className="w-2.5 h-2.5" /> {format(new Date(booking.bookingDate), "dd MMM, yyyy h:mm a")}
@@ -696,6 +790,32 @@ function ManageBookingPage() {
                 </div>
             </div>
             <PwaInstallBanner />
+            {/* Recovery Drawer/Sheet */}
+            {isDesktop ? (
+                <Sheet open={isDeletedBookingsOpen} onOpenChange={setIsDeletedBookingsOpen}>
+                    <SheetContent className="bg-white p-0 flex flex-col h-full">
+                        <SheetHeader className="text-center shrink-0 pt-6 pb-4">
+                            <SheetTitle className="text-xl font-bold flex items-center justify-center gap-2">
+                                <History className="w-6 h-6 text-[#219653]" />
+                                Recover Deactivated Bookings
+                            </SheetTitle>
+                        </SheetHeader>
+                        <DeletedBookingsContent />
+                    </SheetContent>
+                </Sheet>
+            ) : (
+                <Drawer open={isDeletedBookingsOpen} onOpenChange={setIsDeletedBookingsOpen}>
+                    <DrawerContent className="bg-white rounded-t-[32px] outline-none max-h-[85vh] flex flex-col">
+                        <DrawerHeader className="text-center shrink-0 pt-6 pb-4">
+                            <DrawerTitle className="text-xl font-bold flex items-center justify-center gap-2">
+                                <History className="w-6 h-6 text-[#219653]" />
+                                Recover Deactivated Bookings
+                            </DrawerTitle>
+                        </DrawerHeader>
+                        <DeletedBookingsContent />
+                    </DrawerContent>
+                </Drawer>
+            )}
         </div>
     );
 }

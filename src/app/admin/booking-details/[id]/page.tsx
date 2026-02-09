@@ -6,20 +6,31 @@ import {
     Users,
     Package,
     IndianRupee,
+    MoreVertical,
+    Trash2,
+    RotateCcw,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { useRouter, useParams } from "next/navigation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { withAuth } from "@/components/auth/with-auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
+import { toast } from "sonner";
 
 function AdminBookingDetailsPage() {
     const router = useRouter();
+    const queryClient = useQueryClient();
     const { id } = useParams<{ id: string }>();
 
     const { data: bookingResponse, isLoading } = useQuery({
@@ -29,6 +40,24 @@ function AdminBookingDetailsPage() {
             return response.data;
         },
         enabled: !!id
+    });
+
+    const toggleStatusMutation = useMutation({
+        mutationFn: async (isActive: boolean) => {
+            const response = await apiWithOffline.patch(`/admin/bookings/${id}/status`, { isActive });
+            return response.data;
+        },
+        onSuccess: (data) => {
+            const isActive = data.data.isActive;
+            toast.success(`Booking ${isActive ? 'activated' : 'deactivated'} successfully`);
+            queryClient.invalidateQueries({ queryKey: ["booking", id] });
+            queryClient.invalidateQueries({ queryKey: ["bookings"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-trip-bookings"] });
+        },
+        onError: (error: any) => {
+            const errorMessage = error.response?.data?.message || error.message || "Failed to update status";
+            toast.error(errorMessage);
+        },
     });
 
     const booking = bookingResponse?.data;
@@ -54,7 +83,24 @@ function AdminBookingDetailsPage() {
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
                 <h1 className="text-lg font-bold text-black flex-1 text-center">Booking Details</h1>
-                <div className="w-10" />
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                        "rounded-full transition-colors",
+                        booking?.isActive ? "text-red-500 hover:bg-red-50" : "text-green-600 hover:bg-green-50"
+                    )}
+                    onClick={() => toggleStatusMutation.mutate(!booking?.isActive)}
+                    disabled={toggleStatusMutation.isPending}
+                >
+                    {toggleStatusMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : booking?.isActive ? (
+                        <Trash2 className="w-5 h-5" />
+                    ) : (
+                        <RotateCcw className="w-5 h-5" />
+                    )}
+                </Button>
             </div>
 
             {/* Main Content */}
@@ -86,13 +132,20 @@ function AdminBookingDetailsPage() {
                                 )}
                             </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-1">
                             {isLoading ? (
                                 <Skeleton className="h-8 w-20 rounded-md" />
                             ) : (
-                                <Badge className="bg-[#E2F1E8] text-[#219653] border-none shadow-none rounded-md px-3 font-bold capitalize">
-                                    {booking.status}
-                                </Badge>
+                                <>
+                                    <Badge className="bg-[#E2F1E8] text-[#219653] border-none shadow-none rounded-md px-3 font-bold capitalize">
+                                        {booking.status}
+                                    </Badge>
+                                    {!booking.isActive && (
+                                        <Badge variant="destructive" className="bg-red-100 text-red-600 border-none shadow-none rounded-md px-2 py-0 text-[10px] uppercase font-bold">
+                                            Inactive
+                                        </Badge>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

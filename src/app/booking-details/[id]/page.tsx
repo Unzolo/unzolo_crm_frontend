@@ -17,7 +17,9 @@ import {
     MessageCircle,
     MoreVertical,
     Share2,
-    Send
+    Send,
+    Trash2,
+    RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -265,6 +267,23 @@ function BookingDetailsPage() {
         },
     });
 
+    const toggleStatusMutation = useMutation({
+        mutationFn: async (isActive: boolean) => {
+            const response = await apiWithOffline.patch(`/bookings/${id}/status`, { isActive });
+            return response.data;
+        },
+        onSuccess: (data) => {
+            const isActive = data.data.isActive;
+            toast.success(`Booking ${isActive ? 'activated' : 'deactivated'} successfully`);
+            queryClient.invalidateQueries({ queryKey: ["booking", id] });
+            queryClient.invalidateQueries({ queryKey: ["bookings"] });
+        },
+        onError: (error: any) => {
+            const errorMessage = error.response?.data?.message || error.message || "Failed to update status";
+            toast.error(errorMessage);
+        },
+    });
+
     const onParticipantSubmit: SubmitHandler<ParticipantValues> = (values) => {
         updateParticipantsMutation.mutate([values]);
     };
@@ -361,14 +380,34 @@ function BookingDetailsPage() {
                     <ArrowLeft className="w-6 h-6" />
                 </Button>
                 <h1 className="text-lg font-bold text-black flex-1 text-center ">Booking Details</h1>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsWhatsAppOpen(true)}
-                    className="text-[#219653] hover:bg-[#E2F1E8]"
-                >
-                    <WhatsAppIcon className="w-6 h-6" />
-                </Button>
+                <div className="flex items-center">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                            "rounded-full transition-colors",
+                            booking?.isActive ? "text-red-500 hover:bg-red-50" : "text-green-600 hover:bg-green-50"
+                        )}
+                        onClick={() => toggleStatusMutation.mutate(!booking?.isActive)}
+                        disabled={toggleStatusMutation.isPending}
+                    >
+                        {toggleStatusMutation.isPending ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : booking?.isActive ? (
+                            <Trash2 className="w-5 h-5" />
+                        ) : (
+                            <RotateCcw className="w-5 h-5" />
+                        )}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsWhatsAppOpen(true)}
+                        className="text-[#219653] hover:bg-[#E2F1E8]"
+                    >
+                        <WhatsAppIcon className="w-6 h-6" />
+                    </Button>
+                </div>
             </div>
 
             {/* Main Content */}
@@ -400,13 +439,20 @@ function BookingDetailsPage() {
                                 )}
                             </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-1">
                             {isLoading ? (
                                 <Skeleton className="h-8 w-20 rounded-md" />
                             ) : (
-                                <Badge className="bg-[#E2F1E8] text-[#219653] border-none shadow-none rounded-md px-3 font-bold capitalize">
-                                    {booking.status}
-                                </Badge>
+                                <>
+                                    <Badge className="bg-[#E2F1E8] text-[#219653] border-none shadow-none rounded-md px-3 font-bold capitalize">
+                                        {booking.status}
+                                    </Badge>
+                                    {!booking.isActive && (
+                                        <Badge variant="destructive" className="bg-red-100 text-red-600 border-none shadow-none rounded-md px-2 py-0 text-[10px] uppercase font-bold">
+                                            Inactive
+                                        </Badge>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
