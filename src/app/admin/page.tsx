@@ -12,14 +12,16 @@ import {
     Loader2,
     Settings,
     MoreVertical,
-    LogOut
+    LogOut,
+    Activity
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { withAuth } from "@/components/auth/with-auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiWithOffline } from "@/lib/api";
@@ -30,6 +32,7 @@ function AdminDashboardPage() {
     const router = useRouter();
     const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState("");
+    const [showAllPerformers, setShowAllPerformers] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [pendingState, setPendingState] = useState(false);
 
@@ -71,6 +74,49 @@ function AdminDashboardPage() {
         enabled: hasAccess
     });
 
+    // Recent Activities Query
+    const { data: actsResponse, isLoading: actsLoading } = useQuery({
+        queryKey: ["admin-activities"],
+        queryFn: async () => {
+            const response = await apiWithOffline.get("/admin/activities");
+            return response.data;
+        },
+        enabled: hasAccess,
+        staleTime: 0
+    });
+
+    // Helper to get nested data safely
+    const rawData = actsResponse?.data || actsResponse;
+    const rawTrips = rawData?.trips || [];
+    const rawBookings = rawData?.bookings || [];
+
+    const activities = [
+        ...rawTrips.map((trip: any) => ({
+            id: `trip-${trip.id || trip._id}`,
+            type: 'trip_created',
+            partnerName: trip.Partner?.name || 'A partner',
+            tripTitle: trip.title,
+            createdAt: new Date(trip.createdAt || trip.timestamp || Date.now()),
+            icon: <Package className="w-4 h-4 text-orange-600" />,
+            color: 'bg-orange-100',
+            text: `created a new trip`,
+            target: `/admin/trip/${trip.id || trip._id}/bookings`
+        })),
+        ...rawBookings.map((booking: any) => ({
+            id: `booking-${booking.id || booking._id}`,
+            type: 'booking_added',
+            partnerName: booking.Partner?.name || booking.Trip?.Partner?.name || 'A partner',
+            tripTitle: booking.Trip?.title || 'a trip',
+            createdAt: new Date(booking.createdAt || booking.timestamp || Date.now()),
+            icon: <ClipboardCheck className="w-4 h-4 text-green-600" />,
+            color: 'bg-green-100',
+            text: `added a booking for`,
+            target: `/admin/booking-details/${booking.id || booking._id}`
+        }))
+    ].filter(a => a.createdAt.toString() !== 'Invalid Date')
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 5);
+
     // Update Status Mutation
     const statusMutation = useMutation({
         mutationFn: async ({ id, status }: { id: string, status: string }) => {
@@ -91,6 +137,18 @@ function AdminDashboardPage() {
         },
         enabled: hasAccess
     });
+
+    // Top Performers Query
+    const { data: performersResponse, isLoading: performersLoading } = useQuery({
+        queryKey: ["admin-top-performers"],
+        queryFn: async () => {
+            const response = await apiWithOffline.get("/admin/performers");
+            return response.data;
+        },
+        enabled: hasAccess
+    });
+
+    const topPerformers = performersResponse?.data || [];
 
     const maintenanceMutation = useMutation({
         mutationFn: async (isEnabled: boolean) => {
@@ -177,7 +235,6 @@ function AdminDashboardPage() {
                         <ShieldCheck className="w-8 h-8 text-[#219653]" />
                         <div>
                             <div className="flex items-center gap-3">
-                                <ShieldCheck className="w-8 h-8 text-[#219653]" />
                                 <h1 className="text-3xl font-bold text-black">Admin Platform</h1>
                             </div>
                             <p className="text-sm text-gray-500 mt-1">Global management for Unzolo CRM</p>
@@ -273,56 +330,13 @@ function AdminDashboardPage() {
                         </Card>
                     </div>
 
-                    {/* Global Settings Section */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
-                            <h2 className="text-xl font-bold text-black">Global Settings</h2>
-                        </div>
-                        <Card className="p-3 border-none ring-1 ring-gray-100 shadow-sm rounded-2xl flex flex-row items-center justify-between bg-white overflow-hidden relative">
-                            <div className="flex items-center gap-4">
-                                {/* <div className={cn(
-                                    "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-colors",
-                                    isMaintenanceOn ? "bg-red-100" : "bg-gray-100"
-                                )}>
-                                    <Settings className={cn(
-                                        "w-6 h-6 transition-colors",
-                                        isMaintenanceOn ? "text-red-600" : "text-gray-400"
-                                    )} />
-                                </div> */}
-                                <div>
-                                    <h3 className="font-bold text-black">Under Maintenance Mode</h3>
-                                    <p className="text-xs text-gray-500 font-medium">When active, normal users will see a maintenance screen and cannot access the app.</p>
-                                </div>
-                            </div>
-
-                            <div
-                                onClick={() => handleConfirmToggle(!isMaintenanceOn)}
-                                className={cn(
-                                    "flex items-center gap-3 px-0 py-0 rounded-full cursor-pointer transition-all duration-300 border-2 shrink-0 ml-4",
-                                    isMaintenanceOn
-                                        ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-                                        : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
-                                )}
-                            >
-
-                                <div className={cn(
-                                    "w-10 h-5 rounded-full relative transition-all duration-300",
-                                    isMaintenanceOn ? "bg-red-500" : "bg-gray-300"
-                                )}>
-                                    <div className={cn(
-                                        "absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-sm",
-                                        isMaintenanceOn ? "left-5.5" : "left-0.5"
-                                    )} />
-                                </div>
-                            </div>
-                        </Card>
-                    </div>
-
-                    {/* Partners List Section */}
-                    <div className="space-y-4">
+                    {/* Partners List Section (Moved to Top) */}
+                    <div className="space-y-4 pt-4">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-black">Registered Partners</h2>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                                <h2 className="text-xl font-bold text-black">Registered Partners</h2>
+                            </div>
                             <span className="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-lg">
                                 {allPartners.length} Total
                             </span>
@@ -333,22 +347,22 @@ function AdminDashboardPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search partners by name or email..."
-                                className="h-12 bg-gray-50/50 border-gray-100 rounded-lg pr-12 focus-visible:ring-[#219653]"
+                                className="h-12 bg-white border-gray-100 rounded-xl pr-12 focus-visible:ring-[#219653] shadow-sm"
                             />
                             <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#219653]" />
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                             {partnersLoading ? (
-                                Array.from({ length: 4 }).map((_, i) => (
-                                    <Card key={i} className="p-6 h-32 animate-pulse bg-gray-50 rounded-lg border-none" />
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <Card key={i} className="p-6 h-32 animate-pulse bg-gray-50 rounded-2xl border-none" />
                                 ))
                             ) : filteredPartners.length > 0 ? (
                                 filteredPartners.map((partner: any) => (
                                     <Card
                                         key={partner.id}
                                         onClick={() => router.push(`/admin/partner/${partner.id}`)}
-                                        className="p-4 border-none ring-1 ring-gray-100 shadow-sm rounded-lg hover:shadow-md transition-all group relative"
+                                        className="p-4 border-none ring-1 ring-gray-100 shadow-sm rounded-2xl hover:shadow-md transition-all group bg-white"
                                     >
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="flex items-center gap-3 min-w-0">
@@ -357,7 +371,7 @@ function AdminDashboardPage() {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <h3 className="font-bold text-black truncate text-sm group-hover:text-[#219653] transition-colors">{partner.name}</h3>
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5">
                                                         <Badge className={cn(
                                                             "text-[8px] uppercase font-black tracking-tighter px-1.5 py-0 rounded-full border-none",
                                                             partner.status === "active" ? "bg-green-100 text-green-700" :
@@ -368,36 +382,179 @@ function AdminDashboardPage() {
                                                         <span className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
                                                             <Package className="w-2.5 h-2.5" /> {partner.Trips?.length || 0}
                                                         </span>
-                                                        <span className="text-[10px] text-gray-300 font-medium pl-1 border-l border-gray-100">
-                                                            Since {new Date(partner.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
-                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <div className="flex items-center gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="w-8 h-8 rounded-full hover:bg-[#E2F1E8] text-[#219653]"
-                                                >
-                                                    <ChevronRight className="w-5 h-5" />
-                                                </Button>
-                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#219653] transition-colors" />
                                         </div>
                                     </Card>
                                 ))
                             ) : (
-                                <div className="col-span-full py-20 text-center">
-                                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Users className="w-10 h-10 text-gray-200" />
-                                    </div>
-                                    <h3 className="text-lg font-bold text-black">No partners found</h3>
-                                    <p className="text-sm text-gray-500">Try adjusting your search criteria</p>
+                                <div className="col-span-full py-12 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                                    <Users className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                                    <h3 className="text-sm font-bold text-black">No partners found</h3>
                                 </div>
                             )}
                         </div>
                     </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start py-4">
+                        {/* Recent Activity Section */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                                <h2 className="text-xl font-bold text-black">Recent Activity</h2>
+                            </div>
+                            <Card className="p-4 border-none ring-1 ring-gray-100 shadow-sm rounded-2xl bg-white overflow-hidden">
+                                {actsLoading ? (
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="flex items-center gap-4 animate-pulse">
+                                                <div className="w-10 h-10 rounded-full bg-gray-100" />
+                                                <div className="flex-1 space-y-2">
+                                                    <div className="h-4 bg-gray-100 rounded w-3/4" />
+                                                    <div className="h-3 bg-gray-50 rounded w-1/2" />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : activities.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {activities.map((activity, idx) => (
+                                            <div key={activity.id} className="relative flex items-start gap-4 group cursor-pointer" onClick={() => router.push(activity.target)}>
+                                                {idx !== activities.length - 1 && (
+                                                    <div className="absolute left-5 top-10 bottom-[-24px] w-px bg-gray-100" />
+                                                )}
+                                                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm z-10", activity.color)}>
+                                                    {activity.icon}
+                                                </div>
+                                                <div className="flex-1 min-w-0 pt-0.5">
+                                                    <p className="text-sm text-gray-900">
+                                                        <span className="font-bold text-black">{activity.partnerName}</span>
+                                                        {' '}{activity.text}{' '}
+                                                        <span className="font-bold text-[#219653]">{activity.tripTitle}</span>
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 font-medium mt-1 flex items-center gap-1.5">
+                                                        <Activity className="w-3 h-3" />
+                                                        {formatDistanceToNow(activity.createdAt, { addSuffix: true })}
+                                                    </p>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#219653] transition-colors mt-2" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-8 text-center text-gray-500">
+                                        <Activity className="w-10 h-10 mx-auto mb-2 text-gray-200" />
+                                        <p className="text-sm">No recent activity found</p>
+                                    </div>
+                                )}
+                            </Card>
+                        </div>
+
+
+                        {/* Right Column: Settings + Performers */}
+                        <div className="space-y-8">
+                            {/* Global Settings Section */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                                    <h2 className="text-xl font-bold text-black">Global Settings</h2>
+                                </div>
+                                <Card className="p-4 border-none ring-1 ring-gray-100 shadow-sm rounded-2xl flex items-center justify-between bg-white relative">
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-black text-sm">Under Maintenance Mode</h3>
+                                        <p className="text-[10px] text-gray-500 font-medium leading-tight mt-1">Normal users will see a maintenance screen.</p>
+                                    </div>
+
+                                    <div
+                                        onClick={() => handleConfirmToggle(!isMaintenanceOn)}
+                                        className={cn(
+                                            "w-12 h-6 rounded-full p-1 cursor-pointer transition-all duration-300",
+                                            isMaintenanceOn ? "bg-red-500" : "bg-gray-200"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "w-4 h-4 rounded-full bg-white transition-all duration-300 shadow-sm",
+                                            isMaintenanceOn ? "translate-x-6" : "translate-x-0"
+                                        )} />
+                                    </div>
+                                </Card>
+                            </div>
+
+                            {/* Top Performers Section */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-6 bg-[#219653] rounded-br-full rounded-tr-full" />
+                                        <h2 className="text-xl font-bold text-black">Top Performers</h2>
+                                    </div>
+                                    {topPerformers.length > 3 && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setShowAllPerformers(!showAllPerformers)}
+                                            className="w-8 h-8 rounded-full hover:bg-green-50 text-[#219653] transition-all"
+                                        >
+                                            <ChevronRight className={cn("w-5 h-5 transition-transform duration-300", showAllPerformers ? "-rotate-90" : "rotate-0")} />
+                                        </Button>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    {performersLoading ? (
+                                        <div className="grid grid-cols-3 gap-3">
+                                            {[1, 2, 3].map(i => (
+                                                <Card key={i} className="h-32 animate-pulse bg-gray-50 rounded-2xl border-none ring-1 ring-gray-100" />
+                                            ))}
+                                        </div>
+                                    ) : topPerformers.length > 0 ? (
+                                        <>
+                                            <div className={cn(
+                                                "grid gap-3 transition-all duration-500",
+                                                showAllPerformers ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 lg:grid-cols-3"
+                                            )}>
+                                                {(showAllPerformers ? topPerformers : topPerformers.slice(0, 3)).map((performer: any, idx: number) => (
+                                                    <Card
+                                                        key={performer.id}
+                                                        className={cn(
+                                                            "p-3 border-none ring-1 ring-gray-100 shadow-sm rounded-2xl bg-white flex items-center transition-all cursor-pointer group hover:ring-[#219653]/30",
+                                                            showAllPerformers ? "flex-row gap-4" : "flex-col text-center space-y-2"
+                                                        )}
+                                                        onClick={() => router.push(`/admin/partner/${performer.id}`)}
+                                                    >
+                                                        <div className={cn(
+                                                            "w-10 h-10 rounded-full flex items-center justify-center text-white font-black shrink-0 shadow-inner",
+                                                            idx === 0 ? "bg-yellow-400" :
+                                                                idx === 1 ? "bg-slate-300 text-slate-700" :
+                                                                    idx === 2 ? "bg-orange-300 text-orange-800" :
+                                                                        "bg-gray-100 text-gray-500"
+                                                        )}>
+                                                            #{idx + 1}
+                                                        </div>
+                                                        <div className={cn("min-w-0", showAllPerformers ? "flex-1" : "w-full")}>
+                                                            <h3 className="font-bold text-black text-[11px] truncate w-full">{performer.name}</h3>
+                                                            <div className={cn("flex", showAllPerformers ? "items-center gap-3 mt-0.5" : "flex-col mt-1 space-y-0.5")}>
+                                                                <p className="text-[9px] text-gray-500 font-bold leading-none">{performer.bookingsCount} Bookings</p>
+                                                                {showAllPerformers && <span className="w-1 h-1 rounded-full bg-gray-200 shrink-0" />}
+                                                                <p className="text-[10px] font-black text-[#219653]">₹{parseFloat(performer.totalRevenue || 0).toLocaleString()}</p>
+                                                            </div>
+                                                        </div>
+                                                        {showAllPerformers && <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#219653]" />}
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <Card className="p-8 text-center text-gray-500 rounded-2xl border-none ring-1 ring-gray-100">
+                                            <p className="text-xs font-medium">No performer data available yet.</p>
+                                        </Card>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             {/* Confirmation Modal */}

@@ -16,7 +16,9 @@ import {
     CheckCircle2,
     XCircle,
     Search,
-    Filter
+    Filter,
+    Trash2,
+    AlertTriangle
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -38,6 +40,10 @@ function AdminPartnerDetailsPage() {
     const partnerId = params.id;
     const [searchQuery, setSearchQuery] = useState("");
     const [typeFilter, setTypeFilter] = useState("all");
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [tripToDelete, setTripToDelete] = useState<any>(null);
+    const [verificationCode, setVerificationCode] = useState("");
+    const [generatedCode, setGeneratedCode] = useState("");
 
     // Check profile
     const { data: profileResponse, isLoading: profileLoading } = useQuery({
@@ -82,6 +88,31 @@ function AdminPartnerDetailsPage() {
             toast.success("Subscription updated");
         }
     });
+
+    // Delete Trip Mutation
+    const deleteTripMutation = useMutation({
+        mutationFn: async (tripId: string) => {
+            return await apiWithOffline.delete(`/admin/trips/${tripId}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["admin-partner", partnerId] });
+            toast.success("Trip deleted successfully");
+            setIsDeleteModalOpen(false);
+            setTripToDelete(null);
+            setVerificationCode("");
+        },
+        onError: (err: any) => {
+            toast.error(err.message || "Failed to delete trip");
+        }
+    });
+
+    const openDeleteModal = (trip: any) => {
+        const code = Math.floor(1000 + Math.random() * 9000).toString();
+        setGeneratedCode(code);
+        setTripToDelete(trip);
+        setIsDeleteModalOpen(true);
+        setVerificationCode("");
+    };
 
     const partner = partnerResponse?.data;
 
@@ -364,7 +395,7 @@ function AdminPartnerDetailsPage() {
                                 {filteredTrips.map((trip: any) => (
                                     <Card
                                         key={trip.id}
-                                        className="p-6 border-none ring-1 ring-gray-100 shadow-sm rounded-lg bg-white overflow-hidden group cursor-pointer active:scale-[0.99] transition-all"
+                                        className="p-6 border-none ring-1 ring-gray-100 shadow-sm rounded-lg bg-white overflow-hidden group cursor-pointer active:scale-[0.99] transition-all relative"
                                         onClick={() => router.push(`/admin/trip/${trip.id}/bookings`)}
                                     >
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -383,7 +414,19 @@ function AdminPartnerDetailsPage() {
                                                 </p>
                                             </div>
 
-
+                                            {(trip.Bookings?.length || 0) === 0 && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="absolute top-4 right-4 h-9 w-9 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        openDeleteModal(trip);
+                                                    }}
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </Card>
                                 ))}
@@ -408,6 +451,60 @@ function AdminPartnerDetailsPage() {
                     </div>
                 </div>
             </div>
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+                <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <Card className="w-full max-w-sm p-6 border-none shadow-2xl rounded-3xl bg-white animate-in zoom-in-95 duration-300">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                                <AlertTriangle className="w-8 h-8" />
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-bold text-black">Delete Trip?</h3>
+                                <p className="text-sm text-gray-500 mt-2">
+                                    This will permanently remove <span className="font-bold text-black">"{tripToDelete?.title}"</span>.
+                                    This action cannot be undone.
+                                </p>
+                            </div>
+
+                            <div className="w-full bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 text-center">Enter verification code</p>
+                                <div className="text-3xl font-black text-black tracking-[0.5em] mb-4 text-center selects-none">
+                                    {generatedCode}
+                                </div>
+                                <Input
+                                    value={verificationCode}
+                                    onChange={(e) => setVerificationCode(e.target.value)}
+                                    placeholder="Type the 4-digit code"
+                                    className="h-12 bg-white border-none rounded-xl text-center text-lg font-bold tracking-widest focus-visible:ring-[#219653]"
+                                    maxLength={4}
+                                />
+                            </div>
+
+                            <div className="flex flex-col w-full gap-3 pt-2">
+                                <Button
+                                    onClick={() => deleteTripMutation.mutate(tripToDelete.id)}
+                                    disabled={verificationCode !== generatedCode || deleteTripMutation.isPending}
+                                    className="w-full h-12 rounded-full font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-100 disabled:opacity-50 disabled:shadow-none"
+                                >
+                                    {deleteTripMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Deletion"}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => {
+                                        setIsDeleteModalOpen(false);
+                                        setTripToDelete(null);
+                                    }}
+                                    className="w-full h-12 rounded-full font-bold text-gray-400"
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }
